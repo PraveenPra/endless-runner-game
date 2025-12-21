@@ -8,7 +8,7 @@ export class Start extends Phaser.Scene {
         this.load.spritesheet(
             'wargreymon-run',
             'assets/wargreymon/run.png',
-            { frameWidth: 55, frameHeight: 49 } // change if needed
+            { frameWidth: 55.25, frameHeight: 48 } // change if needed
         );
 
         this.load.spritesheet(
@@ -20,6 +20,14 @@ export class Start extends Phaser.Scene {
         this.load.image('ground', 'assets/ground.png'); // put your ground image in assets/
         this.load.image('bg-far', 'assets/sky.png');
         this.load.image('bg-mid', 'assets/bg-mid.png');
+
+        this.load.image('obstacle', 'assets/obstacle1.png');
+        this.load.spritesheet(
+            'enemy',
+            'assets/obstacle1.png',
+            { frameWidth: 17.6, frameHeight: 18 }
+        );
+
     }
 
     create() {
@@ -36,21 +44,30 @@ export class Start extends Phaser.Scene {
             frameRate: 9,
             repeat: 0
         });
-        this.bgFar = this.add.tileSprite(0, 0, 1280, 720, 'bg-far').setOrigin(0,0);
-        this.bgMid = this.add.tileSprite(640, 670, 1280, 50, 'bg-mid');
+
+        this.anims.create({
+            key: 'enemy-walk',
+            frames: this.anims.generateFrameNumbers('enemy'),
+            frameRate: 6,
+            repeat: -1
+        });
+
+
+        this.bgFar = this.add.tileSprite(0, 0, 480, 190, 'bg-far').setOrigin(0, 0);
+        this.bgMid = this.add.tileSprite(0, 202, 1080, 70, 'bg-mid');
 
         // ground as tileSprite for endless scrolling
-        this.ground = this.add.tileSprite(640, 720, 1280, 25, 'ground').setScale(1, 2);
+        this.ground = this.add.tileSprite(240, 250, 480, 25, 'ground').setScale(1, 1.8);
         this.physics.add.existing(this.ground, true); // static physics body
 
 
         // player sprite
-        this.player = this.physics.add.sprite(200, 400, 'wargreymon-run', 0);
+        this.player = this.physics.add.sprite(20, 100, 'wargreymon-run');
         this.player.setOrigin(0.5, 1);
         this.player.setCollideWorldBounds(true);
         this.player.body.setAllowGravity(true);
         this.player.body.setVelocityX(0);
-        this.player.x = 200; // fixed run position
+        this.player.x = 100; // fixed run position
 
         // FIX: set fixed body size to match run frame
         this.player.body.setSize(55, 49);
@@ -74,6 +91,31 @@ export class Start extends Phaser.Scene {
                 sprite.play('run', true);
             }
         });
+
+        this.obstacles = this.physics.add.group();
+        // Spawn obstacles (timer)
+        this.time.addEvent({
+            delay: 1500, // ms
+            loop: true,
+            callback: () => {
+                const obs = this.obstacles.create(520, 220, 'enemy');
+                obs.play('enemy-walk');
+
+                //(Important) Fix obstacle body - prevents hitbox weirdness
+                obs.body.setSize(28, 28);
+                obs.body.setOffset(2, 4);
+
+                obs.setVelocityX(-120);
+                obs.setImmovable(true);
+                obs.body.allowGravity = false;
+            }
+        });
+
+        this.physics.add.collider(this.player, this.obstacles, () => {
+            this.scene.pause();
+            console.log('GAME OVER');
+        });
+
     }
 
     update() {
@@ -90,8 +132,16 @@ export class Start extends Phaser.Scene {
 
         //scrolling ground
         this.ground.tilePositionX += 2; // speed of scrolling
-this.bgFar.tilePositionX += 0.1;
-this.bgMid.tilePositionX += 1;
+        this.bgFar.tilePositionX += 0.1;
+        this.bgMid.tilePositionX += 0.6;
+
+        // Cleanup off-screen obstacles
+        this.obstacles.children.iterate(obs => {
+            if (obs && obs.x < -50) {
+                obs.destroy();
+            }
+        });
+
     }
 
 }
