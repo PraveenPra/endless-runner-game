@@ -21,16 +21,48 @@ export class Start extends Phaser.Scene {
         this.load.image('bg-far', 'assets/sky.png');
         this.load.image('bg-mid', 'assets/bg-mid.png');
 
-        this.load.image('obstacle', 'assets/obstacle1.png');
         this.load.spritesheet(
             'enemy',
             'assets/obstacle1.png',
             { frameWidth: 17.6, frameHeight: 18 }
         );
+        this.load.spritesheet(
+            'enemy2',
+            'assets/enemy2.png',
+            { frameWidth: 26, frameHeight: 34 }
+        );
+        this.load.image('spike', 'assets/spike.png');
+
 
     }
 
     create() {
+        this.obstacleTypes = [
+            {
+                key: 'enemy',
+                sprite: 'enemy',
+                animKey: 'enemy-walk',
+                frameRate: 6,
+                frames: { start: 0, end: 5 },
+                y: 220
+            },
+            {
+                key: 'enemy2',
+                sprite: 'enemy2',
+                animKey: 'enemy2-walk',
+                frameRate: 2,
+                frames: { start: 0, end: 2 },
+                y: 210
+            },
+            {
+                key: 'spike',
+                sprite: 'spike',
+                animKey: null,
+                y: 220
+            }
+        ];
+
+
         this.anims.create({
             key: 'run',
             frames: this.anims.generateFrameNumbers('wargreymon-run'),
@@ -45,11 +77,15 @@ export class Start extends Phaser.Scene {
             repeat: 0
         });
 
-        this.anims.create({
-            key: 'enemy-walk',
-            frames: this.anims.generateFrameNumbers('enemy'),
-            frameRate: 6,
-            repeat: -1
+        this.obstacleTypes.forEach(type => {
+            if (type.animKey) {
+                this.anims.create({
+                    key: type.animKey,
+                    frames: this.anims.generateFrameNumbers(type.sprite, type.frames),
+                    frameRate: type.frameRate,
+                    repeat: -1
+                });
+            }
         });
 
 
@@ -69,8 +105,8 @@ export class Start extends Phaser.Scene {
         this.player.body.setVelocityX(0);
         this.player.x = 100; // fixed run position
 
-        // FIX: set fixed body size to match run frame
-        this.player.body.setSize(55, 49);
+        // FIX: set fixed body size(hitbox/collisionbody) to match run frame
+        this.player.body.setSize(35, 49);
         this.player.body.setOffset(0, 0);
         this.player.play('run');
 
@@ -94,22 +130,34 @@ export class Start extends Phaser.Scene {
 
         this.obstacles = this.physics.add.group();
         // Spawn obstacles (timer)
-        this.time.addEvent({
-            delay: 1500, // ms
-            loop: true,
-            callback: () => {
-                const obs = this.obstacles.create(520, 220, 'enemy');
-                obs.play('enemy-walk');
+        this.spawnObstacle = () => {
+            const type = Phaser.Utils.Array.GetRandom(this.obstacleTypes);
 
-                //(Important) Fix obstacle body - prevents hitbox weirdness
-                obs.body.setSize(28, 28);
-                obs.body.setOffset(2, 4);
+            const obs = this.obstacles.create(520, type.y, type.sprite);
+            obs.body.setSize(obs.width * 0.7, obs.height * 0.8);
+            obs.body.setOffset(
+                obs.width * 0.15,
+                obs.height * 0.2
+            );
 
-                obs.setVelocityX(-120);
-                obs.setImmovable(true);
-                obs.body.allowGravity = false;
-            }
-        });
+
+            if (type.animKey) obs.play(type.animKey);
+
+            obs.setVelocityX(-120);
+            obs.setImmovable(true);
+            obs.body.allowGravity = false;
+
+            // random next spawn
+            this.time.addEvent({
+                delay: Phaser.Math.Between(1000, 2200),
+                callback: this.spawnObstacle,
+                callbackScope: this
+            });
+        };
+
+        // start first spawn
+        this.spawnObstacle();
+
 
         this.physics.add.collider(this.player, this.obstacles, () => {
             this.scene.pause();
