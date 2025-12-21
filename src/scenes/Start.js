@@ -37,6 +37,10 @@ export class Start extends Phaser.Scene {
     }
 
     create() {
+        this.score = 0;
+        this.scoreSpeed = 0.01; // increase later for difficulty
+        this.gameOver = false;
+
         this.obstacleTypes = [
             {
                 key: 'enemy',
@@ -160,28 +164,74 @@ export class Start extends Phaser.Scene {
 
 
         this.physics.add.collider(this.player, this.obstacles, () => {
-            this.scene.pause();
-            console.log('GAME OVER');
+ //instead of pause, manually freeze everytg
+ if (this.gameOver) return;
+
+    this.gameOver = true;
+
+    // stop movement
+    this.player.setVelocity(0, 0);
+    this.obstacles.setVelocityX(0);
+this.player.anims.pause();
+
+    // stop obstacle spawning
+    this.time.removeAllEvents();            // this.scene.pause();
+
+this.scrollSpeed = 0;
+this.obstacles.children.iterate(o => {
+    if (o) o.setVelocityX(0);
+     if (o && o.anims) o.anims.pause();
+});
+
+            this.gameOverText.setVisible(true);
+            this.restartText.setVisible(true);
+            // console.log('GAME OVER');
         });
+
+        this.scoreText = this.add.text(10, 10, 'SCORE: 0', {
+            fontSize: '14px',
+            fill: '#ffffff'
+        }).setScrollFactor(0);
+
+
+        this.gameOverText = this.add.text(240, 120, 'GAME OVER', {
+            fontSize: '24px',
+            fill: '#ff4444'
+        }).setOrigin(0.5).setVisible(false);
+
+        this.restartText = this.add.text(240, 150, 'Press SPACE to Restart', {
+            fontSize: '12px',
+            fill: '#ffffff'
+        }).setOrigin(0.5).setVisible(false);
 
     }
 
     update() {
-        // jump trigger once
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.space) && this.player.body.touching.down) {
-            this.player.setVelocityY(-600);
-            this.player.play('jump', true);
+        if (!this.gameOver) {
+        this.score += this.scoreSpeed;
+        this.scoreText.setText('SCORE: ' + Math.floor(this.score));
         }
 
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.space) && this.player.body.blocked.down) {
-            this.player.setVelocityY(-600);
-            this.player.play('jump', true);
+        if (this.gameOver && Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+          console.log("restart");
+           this.scene.restart();
         }
+
+        // jump trigger once
+       if (!this.gameOver &&
+    Phaser.Input.Keyboard.JustDown(this.cursors.space) &&
+    this.player.body.blocked.down
+) {
+    this.player.setVelocityY(-600);
+    this.player.play('jump', true);
+}
 
         //scrolling ground
+        if (!this.gameOver) {
         this.ground.tilePositionX += 2; // speed of scrolling
         this.bgFar.tilePositionX += 0.1;
         this.bgMid.tilePositionX += 0.6;
+        }
 
         // Cleanup off-screen obstacles
         this.obstacles.children.iterate(obs => {
