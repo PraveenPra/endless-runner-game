@@ -1,3 +1,7 @@
+import { GameState } from "../GameState.js";
+import { createAnimations } from "../systems/AnimationFactory.js";
+import { resolveProfile } from "../entities/digimon/resolveProfile.js";
+
 export class Start extends Phaser.Scene {
   constructor() {
     super("Start");
@@ -6,15 +10,13 @@ export class Start extends Phaser.Scene {
   /* ───────────────── PRELOAD ───────────────── */
 
   preload() {
-    this.load.spritesheet("wargreymon-run", "assets/wargreymon/run.png", {
-      frameWidth: 55.25,
-      frameHeight: 48,
-    });
+    const digimon = GameState.selectedDigimon || "agumon";
 
-    this.load.spritesheet("wargreymon-jump", "assets/wargreymon/jump.png", {
-      frameWidth: 59,
-      frameHeight: 58,
-    });
+    this.load.atlas(
+      digimon,
+      `assets/digimons/${digimon}/${digimon}.png`,
+      `assets/digimons/${digimon}/${digimon}.json`,
+    );
 
     this.load.image("ground", "assets/ground.png");
     this.load.image("bg-far", "assets/sky.png");
@@ -88,18 +90,9 @@ export class Start extends Phaser.Scene {
   /* ───────────────── ANIMATIONS ───────────────── */
 
   createAnimations() {
-    this.anims.create({
-      key: "run",
-      frames: this.anims.generateFrameNumbers("wargreymon-run"),
-      frameRate: 8,
-      repeat: -1,
-    });
+    const digimon = GameState.selectedDigimon || "agumon";
 
-    this.anims.create({
-      key: "jump",
-      frames: this.anims.generateFrameNumbers("wargreymon-jump"),
-      frameRate: 9,
-    });
+    createAnimations(this, digimon);
 
     this.obstacleTypes.forEach((o) => {
       if (!o.anim) return;
@@ -132,24 +125,24 @@ export class Start extends Phaser.Scene {
   /* ───────────────── PLAYER ───────────────── */
 
   createPlayer() {
-    this.player = this.physics.add.sprite(100, 100, "wargreymon-run");
+    const digimon = GameState.selectedDigimon || "agumon";
+    const profile = resolveProfile(digimon);
+    const { body } = profile;
+
+    this.player = this.physics.add.sprite(100, 180, digimon);
     this.player.setOrigin(0.5, 1);
     this.player.setCollideWorldBounds(true);
 
-    this.player.body.setSize(35, 49);
-    this.player.body.setOffset(0, 0);
-    // this.player.body.setGravityY(1200);
+    this.player.body.setSize(body.width, body.height);
+    this.player.body.setOffset(body.offsetX, body.offsetY);
+    this.player.body.setGravityY(body.gravityY);
+    this.player.body.setCollideWorldBounds(true);
 
-    this.player.play("run");
-
-    // keep feet locked
-    this.player.on("animationupdate", (_, __, sprite) => {
-      sprite.y = sprite.body.y + sprite.body.height;
-    });
+    this.player.play(`${digimon}_run`);
 
     this.player.on("animationcomplete", (anim) => {
-      if (anim.key === "jump") {
-        this.player.play("run");
+      if (anim.key === `${digimon}_jump`) {
+        this.player.play(`${digimon}_run`);
       }
     });
   }
@@ -268,12 +261,14 @@ export class Start extends Phaser.Scene {
   }
 
   handleJump() {
+    const digimon = GameState.selectedDigimon || "agumon";
+
     if (
       Phaser.Input.Keyboard.JustDown(this.cursors.space) &&
       this.player.body.blocked.down
     ) {
       this.player.setVelocityY(-600);
-      this.player.play("jump", true);
+      this.player.play(`${digimon}_jump`, true);
       this.sound.play("jump");
     }
   }

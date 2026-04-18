@@ -1,0 +1,13 @@
+export { botomon } from "./botomon.js";
+export { agumon } from "./agumon.js";
+export { gabumon } from "./gabumon.js";
+export { patamon } from "./patamon.js";
+export { chivmon } from "./chivmon.js";
+export { kunemon } from "./kunemon.js";
+export { magnamon } from "./magnamon.js";
+export { seraphimon } from "./seraphimon.js";
+export { ophanimon } from "./ophanimon.js";
+export { birdramon } from "./birdramon.js";
+export { wormmon } from "./wormmon.js";
+export { ancienttroiamon } from "./ancienttroiamon.js";
+export { imperialdramon } from "./imperialdramon.js";

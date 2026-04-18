@@ -1,0 +1,174 @@
+{
+  "textures": [
+    {
+      "image": "birdramon_texture",
+      "format": "RGBA8888",
+      "size": { "w": 0, "h": 0 },
+      "scale": 1,
+      "frames": [
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-B-1",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 67, "h": 53 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 67, "h": 53 },
+          "frame": { "x": 0, "y": 0, "w": 67, "h": 53 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-B-2",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 67, "h": 53 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 67, "h": 53 },
+          "frame": { "x": 67, "y": 0, "w": 67, "h": 53 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-B-3",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 67, "h": 53 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 67, "h": 53 },
+          "frame": { "x": 134, "y": 0, "w": 67, "h": 53 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "fly-1",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 49, "h": 48 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 49, "h": 48 },
+          "frame": { "x": 201, "y": 0, "w": 49, "h": 48 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "fly-2",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 49, "h": 48 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 49, "h": 48 },
+          "frame": { "x": 201, "y": 48, "w": 49, "h": 48 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-B-4",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 67, "h": 53 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 67, "h": 53 },
+          "frame": { "x": 0, "y": 53, "w": 67, "h": 53 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-B-5",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 67, "h": 53 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 67, "h": 53 },
+          "frame": { "x": 67, "y": 53, "w": 67, "h": 53 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "fly-3",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 49, "h": 48 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 49, "h": 48 },
+          "frame": { "x": 134, "y": 53, "w": 49, "h": 48 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-A-1",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 55, "h": 42 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 55, "h": 42 },
+          "frame": { "x": 183, "y": 96, "w": 55, "h": 42 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "take-hit-1",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 45, "h": 43 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 45, "h": 43 },
+          "frame": { "x": 134, "y": 101, "w": 45, "h": 43 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-A-2",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 55, "h": 42 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 55, "h": 42 },
+          "frame": { "x": 179, "y": 138, "w": 55, "h": 42 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-A-3",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 55, "h": 42 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 55, "h": 42 },
+          "frame": { "x": 0, "y": 180, "w": 55, "h": 42 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-A-4",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 55, "h": 42 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 55, "h": 42 },
+          "frame": { "x": 0, "y": 106, "w": 55, "h": 42 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "attack-A-5",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 55, "h": 42 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 55, "h": 42 },
+          "frame": { "x": 55, "y": 106, "w": 55, "h": 42 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "defeated-1",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 52, "h": 41 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 52, "h": 41 },
+          "frame": { "x": 110, "y": 144, "w": 52, "h": 41 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "defeated-2",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 52, "h": 41 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 52, "h": 41 },
+          "frame": { "x": 55, "y": 148, "w": 52, "h": 41 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "take-hit-2",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 45, "h": 43 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 45, "h": 43 },
+          "frame": { "x": 162, "y": 180, "w": 45, "h": 43 }
+        },
+        {
+          "pivot": { "x": 0.5, "y": 0.5 },
+          "filename": "take-hit-3",
+          "rotated": false,
+          "trimmed": false,
+          "sourceSize": { "w": 45, "h": 43 },
+          "spriteSourceSize": { "x": 0, "y": 0, "w": 45, "h": 43 },
+          "frame": { "x": 207, "y": 180, "w": 45, "h": 43 }
+        }
+      ]
+    }
+  ]
+}
