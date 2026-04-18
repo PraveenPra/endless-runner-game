@@ -136,6 +136,7 @@ export class Start extends Phaser.Scene {
 
         this.player.body.setSize(35, 49);
         this.player.body.setOffset(0, 0);
+        this.player.body.setGravityY(1200);
 
         this.player.play('run');
 
@@ -206,6 +207,7 @@ export class Start extends Phaser.Scene {
 
     createCollisions() {
         this.physics.add.collider(this.player, this.ground);
+        this.ground.setImmovable(true);
 
         this.physics.add.collider(this.player, this.obstacles, () => {
             this.triggerGameOver();
@@ -260,7 +262,7 @@ export class Start extends Phaser.Scene {
     handleJump() {
         if (
             Phaser.Input.Keyboard.JustDown(this.cursors.space) &&
-            this.player.body.blocked.down
+            this.player.body.touching.down
         ) {
             this.player.setVelocityY(-600);
             this.player.play('jump', true);
