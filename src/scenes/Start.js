@@ -41,6 +41,7 @@ export class Start extends Phaser.Scene {
 
   create() {
     this.initState();
+    this.createLayout();
     this.createObstacleConfig();
     this.createAnimations();
     this.createBackground();
@@ -61,6 +62,29 @@ export class Start extends Phaser.Scene {
     this.gameOver = false;
   }
 
+  createLayout() {
+    const { width, height } = this.cameras.main;
+    const baseWidth = 480;
+    const baseHeight = 270;
+
+    this.sceneWidth = width;
+    this.sceneHeight = height;
+    this.scaleX = width / baseWidth;
+    this.scaleY = height / baseHeight;
+
+    this.playerStartX = 100 * this.scaleX;
+    this.playerStartY = 100 * this.scaleY;
+    this.groundY = 250 * this.scaleY;
+    this.groundHeight = 25;
+    this.groundScaleY = 1.8;
+    this.bgMidY = 202 * this.scaleY;
+    this.gameOverY = 120 * this.scaleY;
+    this.restartY = 150 * this.scaleY;
+    this.obstacleSpawnX = this.sceneWidth + 40;
+
+    this.physics.world.setBounds(0, 0, width, height);
+  }
+
   /* ───────────────── CONFIG ───────────────── */
 
   createObstacleConfig() {
@@ -70,19 +94,19 @@ export class Start extends Phaser.Scene {
         anim: "enemy-walk",
         frames: { start: 0, end: 5 },
         frameRate: 6,
-        y: 220,
+        y: 220 * this.scaleY,
       },
       {
         sprite: "enemy2",
         anim: "enemy2-walk",
         frames: { start: 0, end: 2 },
         frameRate: 2,
-        y: 210,
+        y: 210 * this.scaleY,
       },
       {
         sprite: "spike",
         anim: null,
-        y: 220,
+        y: 220 * this.scaleY,
       },
     ];
   }
@@ -109,15 +133,25 @@ export class Start extends Phaser.Scene {
   /* ───────────────── ENVIRONMENT ───────────────── */
 
   createBackground() {
-    this.bgFar = this.add.tileSprite(0, 0, 480, 390, "bg-far").setOrigin(0);
+    this.bgFar = this.add
+      .tileSprite(0, 0, this.sceneWidth, this.sceneHeight, "bg-far")
+      .setOrigin(0);
 
-    this.bgMid = this.add.tileSprite(0, 202, 1080, 70, "bg-mid");
+    this.bgMid = this.add
+      .tileSprite(0, this.bgMidY, this.sceneWidth, 70 * this.scaleY, "bg-mid")
+      .setOrigin(0, 0);
   }
 
   createGround() {
     this.ground = this.add
-      .tileSprite(240, 250, 480, 25, "ground")
-      .setScale(1, 1.8);
+      .tileSprite(
+        this.sceneWidth / 2,
+        this.groundY,
+        this.sceneWidth,
+        this.groundHeight,
+        "ground",
+      )
+      .setScale(1, this.groundScaleY);
 
     this.physics.add.existing(this.ground, true);
   }
@@ -129,7 +163,11 @@ export class Start extends Phaser.Scene {
     const profile = resolveProfile(digimon);
     const { body } = profile;
 
-    this.player = this.physics.add.sprite(100, 100, digimon);
+    this.player = this.physics.add.sprite(
+      this.playerStartX,
+      this.playerStartY,
+      digimon,
+    );
     this.player.setOrigin(0.5, 1);
     this.player.setCollideWorldBounds(true);
 
@@ -173,7 +211,7 @@ export class Start extends Phaser.Scene {
     if (this.gameOver) return;
 
     const type = Phaser.Utils.Array.GetRandom(this.obstacleTypes);
-    const obs = this.obstacles.create(520, type.y, type.sprite);
+    const obs = this.obstacles.create(this.obstacleSpawnX, type.y, type.sprite);
 
     obs.body.setSize(obs.width * 0.7, obs.height * 0.8);
     obs.body.setOffset(obs.width * 0.15, obs.height * 0.2);
@@ -197,7 +235,7 @@ export class Start extends Phaser.Scene {
     });
 
     this.gameOverText = this.add
-      .text(240, 120, "GAME OVER", {
+      .text(this.sceneWidth / 2, this.gameOverY, "GAME OVER", {
         fontSize: "24px",
         fill: "#ff4444",
       })
@@ -205,7 +243,7 @@ export class Start extends Phaser.Scene {
       .setVisible(false);
 
     this.restartText = this.add
-      .text(240, 150, "Press SPACE to Restart", {
+      .text(this.sceneWidth / 2, this.restartY, "Press SPACE to Restart", {
         fontSize: "12px",
         fill: "#fff",
       })
