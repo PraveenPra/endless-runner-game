@@ -129,15 +129,26 @@ export class Start extends Phaser.Scene {
     const profile = resolveProfile(digimon);
     const { body } = profile;
 
-    this.player = this.physics.add.sprite(100, 180, digimon);
+    this.player = this.physics.add.sprite(100, 100, digimon);
     this.player.setOrigin(0.5, 1);
     this.player.setCollideWorldBounds(true);
 
+    const frameWidth = this.player.frame.width;
+    const frameHeight = this.player.frame.height;
+    const width = frameWidth * body.scaleX;
+    const height = frameHeight * body.scaleY;
+
     this.player.body.setSize(body.width, body.height);
-    this.player.body.setOffset(body.offsetX, body.offsetY);
+    // this.player.body.setOffset(body.offsetX, body.offsetY);
+    this.player.body.setOffset(
+      frameWidth / 2 - body.width / 2,
+      frameHeight - body.height,
+    );
     this.player.body.setGravityY(body.gravityY);
     this.player.body.setCollideWorldBounds(true);
 
+    // const height = sprite.frame.height;
+    console.log(`Player body size: ${width}`);
     this.player.play(`${digimon}_run`);
 
     this.player.on("animationcomplete", (anim) => {
