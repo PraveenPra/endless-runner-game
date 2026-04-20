@@ -12,11 +12,11 @@ export class Start extends Phaser.Scene {
   preload() {
     const digimon = GameState.selectedDigimon || "agumon";
 
-    this.load.atlas(
-      digimon,
-      `assets/digimons/${digimon}/${digimon}.png`,
-      `assets/digimons/${digimon}/${digimon}.json`,
-    );
+    // this.load.atlas(
+    //   digimon,
+    //   `assets/digimons/${digimon}/${digimon}.png`,
+    //   `assets/digimons/${digimon}/${digimon}.json`,
+    // );
 
     this.load.image("ground", "assets/ground.png");
     this.load.image("bg-far", "assets/sky.png");
@@ -33,6 +33,34 @@ export class Start extends Phaser.Scene {
     });
 
     this.load.image("spike", "assets/spike.png");
+    this.load.spritesheet(
+      "collectible-gold-coin",
+      "assets/collectables/moving/goldcoins.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
+    this.load.spritesheet(
+      "collectible-silver-coin",
+      "assets/collectables/moving/silvercoins.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
+    this.load.spritesheet(
+      "collectible-gem-green",
+      "assets/collectables/moving/gems-green.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
+    this.load.spritesheet("collectible-eggs", "assets/collectables/static/eggs.png", {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
 
     this.load.audio("jump", "assets/sfx/jump.wav");
   }
@@ -62,6 +90,8 @@ export class Start extends Phaser.Scene {
   initState() {
     this.score = 0;
     this.coins = 0;
+    this.gems = 0;
+    this.eggs = 0;
     this.scoreSpeed = 0.01;
     this.gameOver = false;
     this.maxJumps = 2;
@@ -120,12 +150,47 @@ export class Start extends Phaser.Scene {
   createCollectibleConfig() {
     this.collectibleTypes = [
       {
-        sprite: "enemy",
-        anim: "coin-spin",
-        frames: { start: 0, end: 5 },
+        key: "silver-coin",
+        sprite: "collectible-silver-coin",
+        anim: "silver-coin-spin",
+        frames: { start: 0, end: 4 },
         frameRate: 10,
-        scale: 1.1,
-        tint: 0xffd54a,
+        scale: 1.5,
+        value: 1,
+        kind: "coin",
+        weight: 5,
+      },
+      {
+        key: "gold-coin",
+        sprite: "collectible-gold-coin",
+        anim: "gold-coin-spin",
+        frames: { start: 0, end: 4 },
+        frameRate: 10,
+        scale: 1.5,
+        value: 2,
+        kind: "coin",
+        weight: 3,
+      },
+      {
+        key: "green-gem",
+        sprite: "collectible-gem-green",
+        anim: "green-gem-spin",
+        frames: { start: 0, end: 3 },
+        frameRate: 8,
+        scale: 1.5,
+        value: 1,
+        kind: "gem",
+        weight: 2,
+      },
+      {
+        key: "egg",
+        sprite: "collectible-eggs",
+        anim: null,
+        scale: 0.8,
+        value: 1,
+        kind: "egg",
+        weight: 1,
+        useRandomFrame: true,
       },
     ];
 
@@ -133,6 +198,11 @@ export class Start extends Phaser.Scene {
       this.groundY - 30 * this.scaleY,
       this.groundY - 80 * this.scaleY,
       this.groundY - 130 * this.scaleY,
+    ];
+
+    this.eggLanes = [
+      this.groundY - 18 * this.scaleY,
+      this.groundY - 55 * this.scaleY,
     ];
   }
 
@@ -143,14 +213,16 @@ export class Start extends Phaser.Scene {
 
     createAnimations(this, digimon);
 
-    if (!this.anims.exists("coin-spin")) {
+    this.collectibleTypes.forEach((type) => {
+      if (!type.anim || this.anims.exists(type.anim)) return;
+
       this.anims.create({
-        key: "coin-spin",
-        frames: this.anims.generateFrameNumbers("enemy", { start: 0, end: 5 }),
-        frameRate: 10,
+        key: type.anim,
+        frames: this.anims.generateFrameNumbers(type.sprite, type.frames),
+        frameRate: type.frameRate,
         repeat: -1,
       });
-    }
+    });
 
     this.obstacleTypes.forEach((o) => {
       if (!o.anim) return;
@@ -274,27 +346,50 @@ export class Start extends Phaser.Scene {
   spawnCollectible() {
     if (this.gameOver) return;
 
-    const type = Phaser.Utils.Array.GetRandom(this.collectibleTypes);
-    const y = Phaser.Utils.Array.GetRandom(this.collectibleLanes);
-    const coin = this.collectibles.create(this.obstacleSpawnX, y, type.sprite);
+    const weightedTypes = this.collectibleTypes.flatMap((type) =>
+      Array(type.weight).fill(type),
+    );
+    const type = Phaser.Utils.Array.GetRandom(weightedTypes);
+    const lanes = type.kind === "egg" ? this.eggLanes : this.collectibleLanes;
+    const y = Phaser.Utils.Array.GetRandom(lanes);
+    const collectible = this.collectibles.create(
+      this.obstacleSpawnX,
+      y,
+      type.sprite,
+    );
 
-    coin.setScale(type.scale);
-    coin.setTint(type.tint);
-    coin.setVelocityX(-120);
-    coin.play(type.anim);
-    coin.body.setCircle(coin.width * 0.25, coin.width * 0.25, coin.height * 0.25);
+    collectible.collectibleType = type;
+    collectible.setScale(type.scale);
+    collectible.setVelocityX(-120);
 
-    this.tweens.add({
-      targets: coin,
-      y: y - 8 * this.scaleY,
-      duration: 450,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
+    if (type.useRandomFrame) {
+      collectible.setFrame(Phaser.Math.Between(0, 49));
+    } else if (type.anim) {
+      collectible.play(type.anim);
+    }
+
+    collectible.body.setSize(
+      collectible.width * 0.55,
+      collectible.height * 0.55,
+    );
+    collectible.body.setOffset(
+      collectible.width * 0.225,
+      collectible.height * 0.225,
+    );
+
+    if (type.kind !== "egg") {
+      this.tweens.add({
+        targets: collectible,
+        y: y - 8 * this.scaleY,
+        duration: 450,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    }
 
     this.time.addEvent({
-      delay: Phaser.Math.Between(1400, 2600),
+      delay: Phaser.Math.Between(1100, 2200),
       callback: this.spawnCollectible,
       callbackScope: this,
     });
@@ -311,6 +406,16 @@ export class Start extends Phaser.Scene {
     this.coinText = this.add.text(10, 32, "COINS: 0", {
       fontSize: "14px",
       fill: "#ffd54a",
+    });
+
+    this.gemText = this.add.text(10, 54, "GEMS: 0", {
+      fontSize: "14px",
+      fill: "#6cff8f",
+    });
+
+    this.eggText = this.add.text(10, 76, "EGGS: 0", {
+      fontSize: "14px",
+      fill: "#ffdcaa",
     });
 
     this.gameOverText = this.add
@@ -340,18 +445,32 @@ export class Start extends Phaser.Scene {
       this.triggerGameOver();
     });
 
-    this.physics.add.overlap(this.player, this.collectibles, (_, coin) => {
-      this.collectCoin(coin);
+    this.physics.add.overlap(this.player, this.collectibles, (_, collectible) => {
+      this.collectCollectible(collectible);
     });
   }
 
-  collectCoin(coin) {
-    if (!coin || !coin.active || this.gameOver) return;
+  collectCollectible(collectible) {
+    if (!collectible || !collectible.active || this.gameOver) return;
 
-    this.coins += 1;
-    this.coinText.setText("COINS: " + this.coins);
+    const type = collectible.collectibleType;
+    if (!type) {
+      collectible.destroy();
+      return;
+    }
 
-    coin.destroy();
+    if (type.kind === "coin") {
+      this.coins += type.value;
+      this.coinText.setText("COINS: " + this.coins);
+    } else if (type.kind === "gem") {
+      this.gems += type.value;
+      this.gemText.setText("GEMS: " + this.gems);
+    } else if (type.kind === "egg") {
+      this.eggs += type.value;
+      this.eggText.setText("EGGS: " + this.eggs);
+    }
+
+    collectible.destroy();
 
     if (this.sound.get("sfx-collect-shard")) {
       this.sound.play("sfx-collect-shard", { volume: 0.35 });
