@@ -189,7 +189,7 @@ export class Start extends Phaser.Scene {
         scale: 0.8,
         value: 1,
         kind: "egg",
-        weight: 1,
+        weight: 3,
         useRandomFrame: true,
       },
     ];
