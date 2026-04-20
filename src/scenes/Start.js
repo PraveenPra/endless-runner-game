@@ -43,21 +43,25 @@ export class Start extends Phaser.Scene {
     this.initState();
     this.createLayout();
     this.createObstacleConfig();
+    this.createCollectibleConfig();
     this.createAnimations();
     this.createBackground();
     this.createGround();
     this.createPlayer();
     this.createObstacles();
+    this.createCollectibles();
     this.createUI();
     this.createCollisions();
     this.setupInput();
     this.startObstacleSpawner();
+    this.startCollectibleSpawner();
   }
 
   /* ───────────────── STATE ───────────────── */
 
   initState() {
     this.score = 0;
+    this.coins = 0;
     this.scoreSpeed = 0.01;
     this.gameOver = false;
   }
@@ -111,12 +115,40 @@ export class Start extends Phaser.Scene {
     ];
   }
 
+  createCollectibleConfig() {
+    this.collectibleTypes = [
+      {
+        sprite: "enemy",
+        anim: "coin-spin",
+        frames: { start: 0, end: 5 },
+        frameRate: 10,
+        scale: 1.1,
+        tint: 0xffd54a,
+      },
+    ];
+
+    this.collectibleLanes = [
+      this.groundY - 30 * this.scaleY,
+      this.groundY - 80 * this.scaleY,
+      this.groundY - 130 * this.scaleY,
+    ];
+  }
+
   /* ───────────────── ANIMATIONS ───────────────── */
 
   createAnimations() {
     const digimon = GameState.selectedDigimon || "agumon";
 
     createAnimations(this, digimon);
+
+    if (!this.anims.exists("coin-spin")) {
+      this.anims.create({
+        key: "coin-spin",
+        frames: this.anims.generateFrameNumbers("enemy", { start: 0, end: 5 }),
+        frameRate: 10,
+        repeat: -1,
+      });
+    }
 
     this.obstacleTypes.forEach((o) => {
       if (!o.anim) return;
@@ -203,8 +235,19 @@ export class Start extends Phaser.Scene {
     });
   }
 
+  createCollectibles() {
+    this.collectibles = this.physics.add.group({
+      allowGravity: false,
+      immovable: true,
+    });
+  }
+
   startObstacleSpawner() {
     this.spawnObstacle();
+  }
+
+  startCollectibleSpawner() {
+    this.spawnCollectible();
   }
 
   spawnObstacle() {
@@ -226,12 +269,46 @@ export class Start extends Phaser.Scene {
     });
   }
 
+  spawnCollectible() {
+    if (this.gameOver) return;
+
+    const type = Phaser.Utils.Array.GetRandom(this.collectibleTypes);
+    const y = Phaser.Utils.Array.GetRandom(this.collectibleLanes);
+    const coin = this.collectibles.create(this.obstacleSpawnX, y, type.sprite);
+
+    coin.setScale(type.scale);
+    coin.setTint(type.tint);
+    coin.setVelocityX(-120);
+    coin.play(type.anim);
+    coin.body.setCircle(coin.width * 0.25, coin.width * 0.25, coin.height * 0.25);
+
+    this.tweens.add({
+      targets: coin,
+      y: y - 8 * this.scaleY,
+      duration: 450,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+
+    this.time.addEvent({
+      delay: Phaser.Math.Between(1400, 2600),
+      callback: this.spawnCollectible,
+      callbackScope: this,
+    });
+  }
+
   /* ───────────────── UI ───────────────── */
 
   createUI() {
     this.scoreText = this.add.text(10, 10, "SCORE: 0", {
       fontSize: "14px",
       fill: "#fff",
+    });
+
+    this.coinText = this.add.text(10, 32, "COINS: 0", {
+      fontSize: "14px",
+      fill: "#ffd54a",
     });
 
     this.gameOverText = this.add
@@ -260,6 +337,23 @@ export class Start extends Phaser.Scene {
     this.physics.add.collider(this.player, this.obstacles, () => {
       this.triggerGameOver();
     });
+
+    this.physics.add.overlap(this.player, this.collectibles, (_, coin) => {
+      this.collectCoin(coin);
+    });
+  }
+
+  collectCoin(coin) {
+    if (!coin || !coin.active || this.gameOver) return;
+
+    this.coins += 1;
+    this.coinText.setText("COINS: " + this.coins);
+
+    coin.destroy();
+
+    if (this.sound.get("sfx-collect-shard")) {
+      this.sound.play("sfx-collect-shard", { volume: 0.35 });
+    }
   }
 
   triggerGameOver() {
@@ -273,6 +367,12 @@ export class Start extends Phaser.Scene {
       if (!o) return;
       o.setVelocityX(0);
       if (o.anims) o.anims.pause();
+    });
+
+    this.collectibles.children.iterate((coin) => {
+      if (!coin) return;
+      coin.setVelocityX(0);
+      if (coin.anims) coin.anims.pause();
     });
 
     this.time.removeAllEvents();
@@ -295,6 +395,7 @@ export class Start extends Phaser.Scene {
       this.handleJump();
       this.scrollWorld();
       this.cleanupObstacles();
+      this.cleanupCollectibles();
     }
 
     if (this.gameOver && Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
@@ -329,6 +430,12 @@ export class Start extends Phaser.Scene {
   cleanupObstacles() {
     this.obstacles.children.iterate((o) => {
       if (o && o.x < -50) o.destroy();
+    });
+  }
+
+  cleanupCollectibles() {
+    this.collectibles.children.iterate((coin) => {
+      if (coin && coin.x < -50) coin.destroy();
     });
   }
 }
