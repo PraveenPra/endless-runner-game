@@ -147,8 +147,6 @@ export class Start extends Phaser.Scene {
     this.player.body.setGravityY(body.gravityY);
     this.player.body.setCollideWorldBounds(true);
 
-    // const height = sprite.frame.height;
-    console.log(`Player body size: ${width}`);
     this.player.play(`${digimon}_run`);
 
     this.player.on("animationcomplete", (anim) => {

@@ -109,6 +109,10 @@ export class EditBodyScene extends Phaser.Scene {
   createControls() {
     this.paramIndex = 0;
     this.currentParam = this.paramConfig[0];
+    this.adjustHoldDelay = 220;
+    this.adjustHoldInterval = 90;
+    this.nextAdjustAt = 0;
+    this.activeAdjustDirection = 0;
 
     this.highlight = this.add.rectangle(180, 320 - 8, 150, 22, 0xffff00, 0.2);
     this.highlight.setStrokeStyle(1, 0xffff00);
@@ -138,17 +142,6 @@ export class EditBodyScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.reset());
-
-    this.add
-      .text(500, btnY, "SAVE", {
-        fontSize: "16px",
-        color: "#000000",
-        backgroundColor: "#00ff00",
-        padding: { x: 20, y: 8 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.save());
   }
 
   updateBodyBox() {
@@ -199,35 +192,6 @@ export class EditBodyScene extends Phaser.Scene {
     this.updateBodyBox();
   }
 
-  save() {
-    const profileKey = this.digimon;
-    const saveData = {
-      width: this.body.width,
-      height: this.body.height,
-      offsetX: this.body.offsetX,
-      offsetY: this.body.offsetY,
-      gravityY: this.body.gravityY,
-    };
-
-    localStorage.setItem(`digimon_${profileKey}_body`, JSON.stringify(saveData));
-
-    const exportData = {
-      body: saveData,
-    };
-    const content =
-      `export const ${profileKey} = ` + JSON.stringify(exportData, null, 2) + ";\n";
-
-    const blob = new Blob([content], { type: "text/javascript" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${profileKey}.js`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    this.showMessage("Downloaded!", 0x00ff00);
-  }
-
   showMessage(text, color) {
     if (this.msg) this.msg.destroy();
     this.msg = this.add
@@ -244,12 +208,7 @@ export class EditBodyScene extends Phaser.Scene {
   update() {
     if (!this.cursors) return;
 
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
-      this.adjustValue(-1);
-    }
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
-      this.adjustValue(1);
-    }
+    this.handleAdjustInput();
     if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
       this.paramIndex = Math.max(0, this.paramIndex - 1);
       this.updateHighlight();
@@ -258,5 +217,49 @@ export class EditBodyScene extends Phaser.Scene {
       this.paramIndex = Math.min(this.paramConfig.length - 1, this.paramIndex + 1);
       this.updateHighlight();
     }
+  }
+
+  handleAdjustInput() {
+    const now = this.time.now;
+    const leftDown = this.cursors.left.isDown;
+    const rightDown = this.cursors.right.isDown;
+
+    if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
+      this.adjustValue(-1);
+      this.activeAdjustDirection = -1;
+      this.nextAdjustAt = now + this.adjustHoldDelay;
+      return;
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
+      this.adjustValue(1);
+      this.activeAdjustDirection = 1;
+      this.nextAdjustAt = now + this.adjustHoldDelay;
+      return;
+    }
+
+    if (leftDown && !rightDown) {
+      if (this.activeAdjustDirection !== -1) {
+        this.activeAdjustDirection = -1;
+        this.nextAdjustAt = now + this.adjustHoldDelay;
+      } else if (now >= this.nextAdjustAt) {
+        this.adjustValue(-1);
+        this.nextAdjustAt = now + this.adjustHoldInterval;
+      }
+      return;
+    }
+
+    if (rightDown && !leftDown) {
+      if (this.activeAdjustDirection !== 1) {
+        this.activeAdjustDirection = 1;
+        this.nextAdjustAt = now + this.adjustHoldDelay;
+      } else if (now >= this.nextAdjustAt) {
+        this.adjustValue(1);
+        this.nextAdjustAt = now + this.adjustHoldInterval;
+      }
+      return;
+    }
+
+    this.activeAdjustDirection = 0;
   }
 }
