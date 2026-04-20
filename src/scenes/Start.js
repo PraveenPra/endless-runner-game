@@ -135,8 +135,8 @@ export class Start extends Phaser.Scene {
 
     const frameWidth = this.player.frame.width;
     const frameHeight = this.player.frame.height;
-    const width = frameWidth * body.scaleX;
-    const height = frameHeight * body.scaleY;
+    // const width = frameWidth * body.scaleX;
+    // const height = frameHeight * body.scaleY;
 
     this.player.body.setSize(body.width, body.height);
     // this.player.body.setOffset(body.offsetX, body.offsetY);

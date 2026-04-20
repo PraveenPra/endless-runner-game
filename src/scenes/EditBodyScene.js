@@ -44,19 +44,26 @@ export class EditBodyScene extends Phaser.Scene {
       color: "#aaaaaa",
     }).setOrigin(0.5);
 
-    this.sprite = this.add.sprite(250, 180, this.digimon);
+    this.previewX = 250;
+    this.groundY = 250;
+
+    this.sprite = this.physics.add.sprite(this.previewX, this.groundY, this.digimon);
+    this.sprite.setOrigin(0.5, 1);
+    this.sprite.body.setAllowGravity(false);
+    this.sprite.body.moves = false;
     const idleKey = `${this.digimon}_idle`;
     const flyKey = `${this.digimon}_fly`;
     const animKey = this.anims.exists(idleKey) ? idleKey : flyKey;
     this.sprite.anims.play(animKey || `${this.digimon}_run`, true);
 
-    this.bodyBox = this.add.rectangle(250, 180, this.body.width, this.body.height, 0xff0000, 0.3);
+    this.bodyBox = this.add.rectangle(this.previewX, this.groundY, this.body.width, this.body.height, 0xff0000, 0.3);
+    this.bodyBox.setOrigin(0, 0);
     this.bodyBox.setStrokeStyle(2, 0xff0000);
 
     this.add.text(250, 30, "SPRITE", { fontSize: "14px", color: "#ffffff" }).setOrigin(0.5);
     this.add.text(450, 30, "HITBOX (red)", { fontSize: "14px", color: "#ff0000" }).setOrigin(0.5);
 
-    const ground = this.add.rectangle(350, 250, 400, 4, 0x666666);
+    const ground = this.add.rectangle(350, this.groundY, 400, 4, 0x666666);
     this.add.text(350, 265, "GROUND", { fontSize: "12px", color: "#666666" }).setOrigin(0.5);
   }
 
@@ -96,6 +103,7 @@ export class EditBodyScene extends Phaser.Scene {
       fontSize: "12px",
       color: "#888888",
     }).setOrigin(0.5);
+    this.updateBodyBox();
   }
 
   createControls() {
@@ -145,8 +153,21 @@ export class EditBodyScene extends Phaser.Scene {
 
   updateBodyBox() {
     const { width, height, offsetX, offsetY, gravityY } = this.body;
-    this.bodyBox.setPosition(250 + offsetX, 180 + offsetY);
-    this.bodyBox.setSize(width, height);
+    const frameWidth = this.sprite.frame.width;
+    const frameHeight = this.sprite.frame.height;
+
+    this.sprite.body.setSize(width, height);
+    this.sprite.body.setOffset(
+      frameWidth / 2 - width / 2 + offsetX,
+      frameHeight - height + offsetY
+    );
+    this.sprite.body.setGravityY(gravityY);
+
+    this.bodyBox.setPosition(
+      this.sprite.body.x,
+      this.sprite.body.y
+    );
+    this.bodyBox.setSize(this.sprite.body.width, this.sprite.body.height);
 
     this.labels.width.setText(String(width));
     this.labels.height.setText(String(height));
