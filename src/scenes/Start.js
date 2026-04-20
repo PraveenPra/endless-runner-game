@@ -141,6 +141,12 @@ export class Start extends Phaser.Scene {
     this.jumpCount = 0;
     this.shieldHits = 0;
     this.maxShieldHits = 3;
+    this.magnetActive = false;
+    this.magnetDuration = 8000;
+    this.speedBoostActive = false;
+    this.speedBoostDuration = 8000;
+    this.baseObstacleSpeed = -120;
+    this.currentObstacleSpeed = -120;
   }
 
   createLayout() {
@@ -168,6 +174,7 @@ export class Start extends Phaser.Scene {
 
   createShieldTexture() {
     const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+
     graphics.fillStyle(0x4fc3f7, 1);
     graphics.fillCircle(16, 16, 14);
     graphics.lineStyle(2, 0xffffff, 1);
@@ -178,6 +185,27 @@ export class Start extends Phaser.Scene {
     graphics.lineTo(16, 28);
     graphics.strokePath();
     graphics.generateTexture("collectible-shield", 32, 32);
+
+    graphics.clear();
+
+    graphics.fillStyle(0xff6f00, 1);
+    graphics.fillCircle(16, 16, 14);
+    graphics.fillStyle(0xffffff, 1);
+    graphics.fillCircle(16, 16, 8);
+    graphics.fillStyle(0xff6f00, 1);
+    graphics.fillCircle(16, 16, 4);
+    graphics.generateTexture("collectible-magnet", 32, 32);
+
+    graphics.clear();
+
+    graphics.fillStyle(0x76ff03, 1);
+    graphics.fillCircle(16, 16, 14);
+    graphics.lineStyle(2, 0xffffff, 1);
+    graphics.strokeCircle(16, 16, 14);
+    graphics.fillStyle(0xffffff, 1);
+    graphics.fillTriangle(16, 6, 12, 24, 20, 24);
+    graphics.generateTexture("collectible-speedboost", 32, 32);
+
     graphics.destroy();
   }
 
@@ -288,6 +316,24 @@ export class Start extends Phaser.Scene {
         value: 1,
         kind: "shield",
         weight: 7,
+      },
+      {
+        key: "magnet",
+        sprite: "collectible-magnet",
+        anim: null,
+        scale: 0.6,
+        value: 1,
+        kind: "magnet",
+        weight: 5,
+      },
+      {
+        key: "speedboost",
+        sprite: "collectible-speedboost",
+        anim: null,
+        scale: 0.6,
+        value: 1,
+        kind: "speedboost",
+        weight: 5,
       },
     ];
 
@@ -429,7 +475,7 @@ export class Start extends Phaser.Scene {
 
     obs.body.setSize(obs.width * 0.7, obs.height * 0.8);
     obs.body.setOffset(obs.width * 0.15, obs.height * 0.2);
-    obs.setVelocityX(-120);
+    obs.setVelocityX(this.currentObstacleSpeed);
 
     if (type.anim) obs.play(type.anim);
 
@@ -457,7 +503,7 @@ export class Start extends Phaser.Scene {
 
     collectible.collectibleType = type;
     collectible.setScale(type.scale);
-    collectible.setVelocityX(-120);
+    collectible.setVelocityX(this.currentObstacleSpeed);
 
     if (type.useRandomFrame) {
       collectible.setFrame(Phaser.Math.Between(0, 49));
@@ -521,6 +567,18 @@ export class Start extends Phaser.Scene {
     });
     this.shieldText.setVisible(false);
 
+    this.magnetText = this.add.text(150, 10, "MAGNET", {
+      fontSize: "14px",
+      fill: "#ff6f00",
+    });
+    this.magnetText.setVisible(false);
+
+    this.speedBoostText = this.add.text(150, 32, "SPEED", {
+      fontSize: "14px",
+      fill: "#76ff03",
+    });
+    this.speedBoostText.setVisible(false);
+
     this.gameOverText = this.add
       .text(this.sceneWidth / 2, this.gameOverY, "GAME OVER", {
         fontSize: "24px",
@@ -581,6 +639,10 @@ export class Start extends Phaser.Scene {
       this.eggText.setText("EGGS: " + this.eggs);
     } else if (type.kind === "shield") {
       this.collectShield();
+    } else if (type.kind === "magnet") {
+      this.activateMagnet();
+    } else if (type.kind === "speedboost") {
+      this.activateSpeedBoost();
     }
 
     collectible.destroy();
@@ -594,6 +656,100 @@ export class Start extends Phaser.Scene {
     if (this.shieldHits < this.maxShieldHits) {
       this.shieldHits = this.maxShieldHits;
       this.updateShieldIndicator();
+    }
+  }
+
+  activateMagnet() {
+    this.magnetActive = true;
+    this.magnetTimer = this.time.addEvent({
+      delay: this.magnetDuration,
+      callback: () => {
+        this.magnetActive = false;
+        if (this.magnetSprite) {
+          this.magnetSprite.setVisible(false);
+        }
+        if (this.magnetText) {
+          this.magnetText.setVisible(false);
+        }
+      },
+      callbackScope: this,
+    });
+    this.updatePowerUpIndicator();
+  }
+
+  activateSpeedBoost() {
+    this.speedBoostActive = true;
+    this.currentObstacleSpeed = this.baseObstacleSpeed * 1.8;
+    this.obstacles.children.iterate((o) => {
+      if (o && o.active) {
+        o.setVelocityX(this.currentObstacleSpeed);
+      }
+    });
+    this.collectibles.children.iterate((c) => {
+      if (c && c.active) {
+        c.setVelocityX(this.currentObstacleSpeed);
+      }
+    });
+    this.time.addEvent({
+      delay: this.speedBoostDuration,
+      callback: () => {
+        this.speedBoostActive = false;
+        this.currentObstacleSpeed = this.baseObstacleSpeed;
+        this.obstacles.children.iterate((o) => {
+          if (o && o.active) {
+            o.setVelocityX(this.baseObstacleSpeed);
+          }
+        });
+        this.collectibles.children.iterate((c) => {
+          if (c && c.active) {
+            c.setVelocityX(this.baseObstacleSpeed);
+          }
+        });
+        if (this.speedBoostSprite) {
+          this.speedBoostSprite.setVisible(false);
+        }
+        if (this.speedBoostText) {
+          this.speedBoostText.setVisible(false);
+        }
+      },
+      callbackScope: this,
+    });
+    this.updatePowerUpIndicator();
+  }
+
+  updatePowerUpIndicator() {
+    if (this.magnetActive && !this.magnetSprite) {
+      this.magnetSprite = this.add.sprite(
+        this.player.x + 20 * this.scaleX,
+        this.player.y - 30 * this.scaleY,
+        "collectible-magnet",
+      );
+      this.magnetSprite.setScale(0.7);
+    }
+    if (this.magnetSprite) {
+      this.magnetSprite.setVisible(this.magnetActive);
+      this.magnetSprite.x = this.player.x + 20 * this.scaleX;
+      this.magnetSprite.y = this.player.y - 25 * this.scaleY;
+    }
+    if (this.magnetText) {
+      this.magnetText.setVisible(this.magnetActive);
+    }
+
+    if (this.speedBoostActive && !this.speedBoostSprite) {
+      this.speedBoostSprite = this.add.sprite(
+        this.player.x - 20 * this.scaleX,
+        this.player.y - 30 * this.scaleY,
+        "collectible-speedboost",
+      );
+      this.speedBoostSprite.setScale(0.7);
+    }
+    if (this.speedBoostSprite) {
+      this.speedBoostSprite.setVisible(this.speedBoostActive);
+      this.speedBoostSprite.x = this.player.x - 20 * this.scaleX;
+      this.speedBoostSprite.y = this.player.y - 25 * this.scaleY;
+    }
+    if (this.speedBoostText) {
+      this.speedBoostText.setVisible(this.speedBoostActive);
     }
   }
 
@@ -634,6 +790,26 @@ export class Start extends Phaser.Scene {
       this.shieldText.setText("SHIELD: " + this.shieldHits);
       this.shieldText.setVisible(this.shieldHits > 0);
     }
+  }
+
+  updateMagnetAttraction() {
+    const magnetRange = 150 * this.scaleX;
+    this.collectibles.children.iterate((coin) => {
+      if (!coin || !coin.active) return;
+      if (coin.collectibleType && coin.collectibleType.kind === "coin") {
+        const dist = Phaser.Math.Distance.Between(
+          this.player.x,
+          this.player.y,
+          coin.x,
+          coin.y,
+        );
+        if (dist < magnetRange) {
+          const angle = Phaser.Math.Angle.Between(coin.x, coin.y, this.player.x, this.player.y);
+          const speed = 300 + (magnetRange - dist) * 2;
+          coin.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+        }
+      }
+    });
   }
 
   handleObstacleHit(obstacle) {
@@ -694,6 +870,10 @@ export class Start extends Phaser.Scene {
       this.cleanupObstacles();
       this.cleanupCollectibles();
       this.updateShieldIndicator();
+      this.updatePowerUpIndicator();
+      if (this.magnetActive) {
+        this.updateMagnetAttraction();
+      }
     }
 
     if (this.gameOver && Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
