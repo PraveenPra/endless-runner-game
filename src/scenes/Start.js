@@ -64,6 +64,8 @@ export class Start extends Phaser.Scene {
     this.coins = 0;
     this.scoreSpeed = 0.01;
     this.gameOver = false;
+    this.maxJumps = 2;
+    this.jumpCount = 0;
   }
 
   createLayout() {
@@ -391,6 +393,7 @@ export class Start extends Phaser.Scene {
 
   update() {
     if (!this.gameOver) {
+      this.updateJumpState();
       this.updateScore();
       this.handleJump();
       this.scrollWorld();
@@ -408,13 +411,20 @@ export class Start extends Phaser.Scene {
     this.scoreText.setText("SCORE: " + Math.floor(this.score));
   }
 
+  updateJumpState() {
+    if (this.player.body.blocked.down || this.player.body.touching.down) {
+      this.jumpCount = 0;
+    }
+  }
+
   handleJump() {
     const digimon = GameState.selectedDigimon || "agumon";
 
     if (
       Phaser.Input.Keyboard.JustDown(this.cursors.space) &&
-      this.player.body.blocked.down
+      this.jumpCount < this.maxJumps
     ) {
+      this.jumpCount += 1;
       this.player.setVelocityY(-600);
       this.player.play(`${digimon}_jump`, true);
       this.sound.play("jump");
