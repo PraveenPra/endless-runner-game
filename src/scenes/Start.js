@@ -12,27 +12,65 @@ export class Start extends Phaser.Scene {
   preload() {
     const digimon = GameState.selectedDigimon || "agumon";
 
-    // this.load.atlas(
-    //   digimon,
-    //   `assets/digimons/${digimon}/${digimon}.png`,
-    //   `assets/digimons/${digimon}/${digimon}.json`,
-    // );
-
     this.load.image("ground", "assets/ground.png");
     this.load.image("bg-far", "assets/sky.png");
     this.load.image("bg-mid", "assets/bg-mid.png");
 
-    this.load.spritesheet("enemy", "assets/obstacle1.png", {
-      frameWidth: 17.6,
-      frameHeight: 18,
-    });
+    this.load.spritesheet(
+      "obstacle-moving-1",
+      "assets/obstacles/moving/bala.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
 
-    this.load.spritesheet("enemy2", "assets/enemy2.png", {
-      frameWidth: 26,
-      frameHeight: 34,
-    });
+    this.load.spritesheet(
+      "obstacle-moving-2",
+      "assets/obstacles/moving/bomba.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
 
-    this.load.image("spike", "assets/spike.png");
+    this.load.spritesheet(
+      "obstacle-moving-3",
+      "assets/obstacles/moving/bomba2.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
+
+    this.load.spritesheet(
+      "obstacle-moving-4",
+      "assets/obstacles/moving/bombaex.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
+
+    this.load.spritesheet(
+      "obstacle-moving-5",
+      "assets/obstacles/moving/estrelectra.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
+
+    this.load.spritesheet(
+      "obstacle-moving-6",
+      "assets/obstacles/moving/mechagoomba.png",
+      {
+        frameWidth: 16,
+        frameHeight: 16,
+      },
+    );
+
+    this.load.image("obstacle-static-1", "assets/obstacles/static/balota.png");
     this.load.spritesheet(
       "collectible-gold-coin",
       "assets/collectables/moving/goldcoins.png",
@@ -57,10 +95,14 @@ export class Start extends Phaser.Scene {
         frameHeight: 16,
       },
     );
-    this.load.spritesheet("collectible-eggs", "assets/collectables/static/eggs.png", {
-      frameWidth: 64,
-      frameHeight: 64,
-    });
+    this.load.spritesheet(
+      "collectible-eggs",
+      "assets/collectables/static/eggs.png",
+      {
+        frameWidth: 64,
+        frameHeight: 64,
+      },
+    );
 
     this.load.audio("jump", "assets/sfx/jump.wav");
   }
@@ -126,21 +168,49 @@ export class Start extends Phaser.Scene {
   createObstacleConfig() {
     this.obstacleTypes = [
       {
-        sprite: "enemy",
-        anim: "enemy-walk",
-        frames: { start: 0, end: 5 },
-        frameRate: 6,
+        sprite: "obstacle-moving-1",
+        anim: "obstacle-moving-1-anim",
+        frames: { start: 0, end: 2 },
+        frameRate: 3,
         y: 220 * this.scaleY,
       },
       {
-        sprite: "enemy2",
-        anim: "enemy2-walk",
-        frames: { start: 0, end: 2 },
-        frameRate: 2,
-        y: 210 * this.scaleY,
+        sprite: "obstacle-moving-2",
+        anim: "obstacle-moving-2-anim",
+        frames: { start: 0, end: 4 },
+        frameRate: 3,
+        y: 220 * this.scaleY,
       },
       {
-        sprite: "spike",
+        sprite: "obstacle-moving-3",
+        anim: "obstacle-moving-3-anim",
+        frames: { start: 0, end: 3 },
+        frameRate: 3,
+        y: 220 * this.scaleY,
+      },
+      {
+        sprite: "obstacle-moving-4",
+        anim: "obstacle-moving-4-anim",
+        frames: { start: 0, end: 2 },
+        frameRate: 3,
+        y: 220 * this.scaleY,
+      },
+      {
+        sprite: "obstacle-moving-5",
+        anim: "obstacle-moving-5-anim",
+        frames: { start: 0, end: 3 },
+        frameRate: 3,
+        y: 220 * this.scaleY,
+      },
+      {
+        sprite: "obstacle-moving-6",
+        anim: "obstacle-moving-6-anim",
+        frames: { start: 0, end: 4 },
+        frameRate: 3,
+        y: 220 * this.scaleY,
+      },
+      {
+        sprite: "obstacle-static-1",
         anim: null,
         y: 220 * this.scaleY,
       },
@@ -445,9 +515,13 @@ export class Start extends Phaser.Scene {
       this.triggerGameOver();
     });
 
-    this.physics.add.overlap(this.player, this.collectibles, (_, collectible) => {
-      this.collectCollectible(collectible);
-    });
+    this.physics.add.overlap(
+      this.player,
+      this.collectibles,
+      (_, collectible) => {
+        this.collectCollectible(collectible);
+      },
+    );
   }
 
   collectCollectible(collectible) {
