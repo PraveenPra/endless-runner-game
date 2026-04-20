@@ -111,6 +111,7 @@ export class Start extends Phaser.Scene {
 
   create() {
     this.initState();
+    this.createShieldTexture();
     this.createLayout();
     this.createObstacleConfig();
     this.createCollectibleConfig();
@@ -138,6 +139,8 @@ export class Start extends Phaser.Scene {
     this.gameOver = false;
     this.maxJumps = 2;
     this.jumpCount = 0;
+    this.shieldHits = 0;
+    this.maxShieldHits = 3;
   }
 
   createLayout() {
@@ -161,6 +164,21 @@ export class Start extends Phaser.Scene {
     this.obstacleSpawnX = this.sceneWidth + 40;
 
     this.physics.world.setBounds(0, 0, width, height);
+  }
+
+  createShieldTexture() {
+    const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+    graphics.fillStyle(0x4fc3f7, 1);
+    graphics.fillCircle(16, 16, 14);
+    graphics.lineStyle(2, 0xffffff, 1);
+    graphics.strokeCircle(16, 16, 14);
+    graphics.lineStyle(3, 0x4fc3f7, 1);
+    graphics.beginPath();
+    graphics.moveTo(16, 4);
+    graphics.lineTo(16, 28);
+    graphics.strokePath();
+    graphics.generateTexture("collectible-shield", 32, 32);
+    graphics.destroy();
   }
 
   /* ───────────────── CONFIG ───────────────── */
@@ -261,6 +279,15 @@ export class Start extends Phaser.Scene {
         kind: "egg",
         weight: 3,
         useRandomFrame: true,
+      },
+      {
+        key: "shield",
+        sprite: "collectible-shield",
+        anim: null,
+        scale: 0.6,
+        value: 1,
+        kind: "shield",
+        weight: 7,
       },
     ];
 
@@ -488,6 +515,12 @@ export class Start extends Phaser.Scene {
       fill: "#ffdcaa",
     });
 
+    this.shieldText = this.add.text(10, 98, "SHIELD: 0", {
+      fontSize: "14px",
+      fill: "#4fc3f7",
+    });
+    this.shieldText.setVisible(false);
+
     this.gameOverText = this.add
       .text(this.sceneWidth / 2, this.gameOverY, "GAME OVER", {
         fontSize: "24px",
@@ -511,9 +544,13 @@ export class Start extends Phaser.Scene {
     this.physics.add.collider(this.player, this.ground);
     // this.ground.setImmovable(true);
 
-    this.physics.add.collider(this.player, this.obstacles, () => {
-      this.triggerGameOver();
-    });
+    this.physics.add.collider(
+      this.player,
+      this.obstacles,
+      (player, obstacle) => {
+        this.handleObstacleHit(obstacle);
+      },
+    );
 
     this.physics.add.overlap(
       this.player,
@@ -542,12 +579,76 @@ export class Start extends Phaser.Scene {
     } else if (type.kind === "egg") {
       this.eggs += type.value;
       this.eggText.setText("EGGS: " + this.eggs);
+    } else if (type.kind === "shield") {
+      this.collectShield();
     }
 
     collectible.destroy();
 
     if (this.sound.get("sfx-collect-shard")) {
       this.sound.play("sfx-collect-shard", { volume: 0.35 });
+    }
+  }
+
+  collectShield() {
+    if (this.shieldHits < this.maxShieldHits) {
+      this.shieldHits = this.maxShieldHits;
+      this.updateShieldIndicator();
+    }
+  }
+
+  updateShieldIndicator() {
+    if (this.shieldHits > 0 && !this.shieldSprite) {
+      this.shieldSprite = this.add.sprite(
+        this.player.x,
+        this.player.y - 30 * this.scaleY,
+        "collectible-shield",
+      );
+      this.shieldSprite.setScale(0.8);
+
+      this.tweens.add({
+        targets: this.shieldSprite,
+        angle: 360,
+        duration: 1500,
+        repeat: -1,
+        ease: "Linear",
+      });
+
+      this.tweens.add({
+        targets: this.shieldSprite,
+        y: this.player.y - 35 * this.scaleY,
+        duration: 300,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    }
+
+    if (this.shieldSprite) {
+      this.shieldSprite.setVisible(this.shieldHits > 0);
+      this.shieldSprite.x = this.player.x;
+      this.shieldSprite.y = this.player.y - 25 * this.scaleY;
+    }
+
+    if (this.shieldText) {
+      this.shieldText.setText("SHIELD: " + this.shieldHits);
+      this.shieldText.setVisible(this.shieldHits > 0);
+    }
+  }
+
+  handleObstacleHit(obstacle) {
+    if (this.shieldHits > 0) {
+      this.shieldHits--;
+      this.updateShieldIndicator();
+      obstacle.destroy();
+
+      this.player.setVelocityX(0);
+      this.player.x = this.playerStartX;
+
+      this.cameras.main.shake(100, 0.01);
+      this.cameras.main.flash(100, 100, 200, 255);
+    } else {
+      this.triggerGameOver();
     }
   }
 
@@ -592,6 +693,7 @@ export class Start extends Phaser.Scene {
       this.scrollWorld();
       this.cleanupObstacles();
       this.cleanupCollectibles();
+      this.updateShieldIndicator();
     }
 
     if (this.gameOver && Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
