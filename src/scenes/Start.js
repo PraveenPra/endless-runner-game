@@ -104,6 +104,13 @@ export class Start extends Phaser.Scene {
       },
     );
 
+    this.load.image("shield-powerup", "assets/collectables/static/shield.png");
+    this.load.image("magnet-powerup", "assets/collectables/static/magnet.png");
+    this.load.image(
+      "speedboost-powerup",
+      "assets/collectables/static/speed-boost.png",
+    );
+
     this.load.audio("jump", "assets/sfx/jump.wav");
   }
 
@@ -111,7 +118,6 @@ export class Start extends Phaser.Scene {
 
   create() {
     this.initState();
-    this.createShieldTexture();
     this.createLayout();
     this.createObstacleConfig();
     this.createCollectibleConfig();
@@ -170,43 +176,6 @@ export class Start extends Phaser.Scene {
     this.obstacleSpawnX = this.sceneWidth + 40;
 
     this.physics.world.setBounds(0, 0, width, height);
-  }
-
-  createShieldTexture() {
-    const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-
-    graphics.fillStyle(0x4fc3f7, 1);
-    graphics.fillCircle(16, 16, 14);
-    graphics.lineStyle(2, 0xffffff, 1);
-    graphics.strokeCircle(16, 16, 14);
-    graphics.lineStyle(3, 0x4fc3f7, 1);
-    graphics.beginPath();
-    graphics.moveTo(16, 4);
-    graphics.lineTo(16, 28);
-    graphics.strokePath();
-    graphics.generateTexture("collectible-shield", 32, 32);
-
-    graphics.clear();
-
-    graphics.fillStyle(0xff6f00, 1);
-    graphics.fillCircle(16, 16, 14);
-    graphics.fillStyle(0xffffff, 1);
-    graphics.fillCircle(16, 16, 8);
-    graphics.fillStyle(0xff6f00, 1);
-    graphics.fillCircle(16, 16, 4);
-    graphics.generateTexture("collectible-magnet", 32, 32);
-
-    graphics.clear();
-
-    graphics.fillStyle(0x76ff03, 1);
-    graphics.fillCircle(16, 16, 14);
-    graphics.lineStyle(2, 0xffffff, 1);
-    graphics.strokeCircle(16, 16, 14);
-    graphics.fillStyle(0xffffff, 1);
-    graphics.fillTriangle(16, 6, 12, 24, 20, 24);
-    graphics.generateTexture("collectible-speedboost", 32, 32);
-
-    graphics.destroy();
   }
 
   /* ───────────────── CONFIG ───────────────── */
@@ -302,7 +271,7 @@ export class Start extends Phaser.Scene {
         key: "egg",
         sprite: "collectible-eggs",
         anim: null,
-        scale: 0.5,
+        scale: 0.3,
         value: 1,
         kind: "egg",
         weight: 3,
@@ -310,7 +279,7 @@ export class Start extends Phaser.Scene {
       },
       {
         key: "shield",
-        sprite: "collectible-shield",
+        sprite: "shield-powerup",
         anim: null,
         scale: 0.6,
         value: 1,
@@ -319,7 +288,7 @@ export class Start extends Phaser.Scene {
       },
       {
         key: "magnet",
-        sprite: "collectible-magnet",
+        sprite: "magnet-powerup",
         anim: null,
         scale: 0.6,
         value: 1,
@@ -328,7 +297,7 @@ export class Start extends Phaser.Scene {
       },
       {
         key: "speedboost",
-        sprite: "collectible-speedboost",
+        sprite: "speedboost-powerup",
         anim: null,
         scale: 0.6,
         value: 1,
@@ -725,7 +694,7 @@ export class Start extends Phaser.Scene {
       this.magnetSprite = this.add.sprite(
         this.player.x + 20 * this.scaleX,
         this.player.y - 30 * this.scaleY,
-        "collectible-magnet",
+        "magnet-powerup",
       );
       this.magnetSprite.setScale(0.7);
     }
@@ -742,7 +711,7 @@ export class Start extends Phaser.Scene {
       this.speedBoostSprite = this.add.sprite(
         this.player.x - 20 * this.scaleX,
         this.player.y - 30 * this.scaleY,
-        "collectible-speedboost",
+        "speedboost-powerup",
       );
       this.speedBoostSprite.setScale(0.7);
     }
@@ -761,7 +730,7 @@ export class Start extends Phaser.Scene {
       this.shieldSprite = this.add.sprite(
         this.player.x,
         this.player.y - 30 * this.scaleY,
-        "collectible-shield",
+        "shield-powerup",
       );
       this.shieldSprite.setScale(0.8);
 
@@ -807,7 +776,12 @@ export class Start extends Phaser.Scene {
           coin.y,
         );
         if (dist < magnetRange) {
-          const angle = Phaser.Math.Angle.Between(coin.x, coin.y, this.player.x, this.player.y);
+          const angle = Phaser.Math.Angle.Between(
+            coin.x,
+            coin.y,
+            this.player.x,
+            this.player.y,
+          );
           const speed = 300 + (magnetRange - dist) * 2;
           coin.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
         }
@@ -872,9 +846,9 @@ export class Start extends Phaser.Scene {
       this.scrollWorld();
       this.cleanupObstacles();
       this.cleanupCollectibles();
-this.updateShieldIndicator();
-    this.updatePowerUpIndicator();
-    if (this.magnetActive) {
+      this.updateShieldIndicator();
+      this.updatePowerUpIndicator();
+      if (this.magnetActive) {
         this.updateMagnetAttraction();
       }
     }
