@@ -132,9 +132,9 @@ export class Start extends Phaser.Scene {
 
   initState() {
     this.score = 0;
-    this.coins = 0;
-    this.gems = 0;
-    this.eggs = 0;
+    this.coins = GameState.currency.coins;
+    this.gems = GameState.currency.gems;
+    this.eggs = GameState.currency.eggs;
     this.scoreSpeed = 0.01;
     this.gameOver = false;
     this.maxJumps = 2;
@@ -630,12 +630,15 @@ export class Start extends Phaser.Scene {
 
     if (type.kind === "coin") {
       this.coins += type.value;
+      GameState.currency.addCoins(type.value);
       this.coinText.setText("COINS: " + this.coins);
     } else if (type.kind === "gem") {
       this.gems += type.value;
+      GameState.currency.addGems(type.value);
       this.gemText.setText("GEMS: " + this.gems);
     } else if (type.kind === "egg") {
       this.eggs += type.value;
+      GameState.currency.addEggs(type.value);
       this.eggText.setText("EGGS: " + this.eggs);
     } else if (type.kind === "shield") {
       this.collectShield();
@@ -869,9 +872,9 @@ export class Start extends Phaser.Scene {
       this.scrollWorld();
       this.cleanupObstacles();
       this.cleanupCollectibles();
-      this.updateShieldIndicator();
-      this.updatePowerUpIndicator();
-      if (this.magnetActive) {
+this.updateShieldIndicator();
+    this.updatePowerUpIndicator();
+    if (this.magnetActive) {
         this.updateMagnetAttraction();
       }
     }

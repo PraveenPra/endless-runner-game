@@ -91,4 +91,22 @@ export const GameState = {
     musicVolume: 0.01,
     sfxVolume: 0.7,
   },
+
+  currency: {
+    coins: 0,
+    gems: 0,
+    eggs: 0,
+
+    addCoins(value = 1) {
+      this.coins += value;
+    },
+
+    addGems(value = 1) {
+      this.gems += value;
+    },
+
+    addEggs(value = 1) {
+      this.eggs += value;
+    },
+  },
 };
