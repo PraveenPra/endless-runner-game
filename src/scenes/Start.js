@@ -153,6 +153,9 @@ export class Start extends Phaser.Scene {
     this.speedBoostDuration = 8000;
     this.baseObstacleSpeed = -120;
     this.currentObstacleSpeed = -120;
+    this.projectileSpeedBoost = 1;
+    this.nextAttackAt = 0;
+    this.pendingAttackEvent = null;
   }
 
   createLayout() {
@@ -188,6 +191,7 @@ export class Start extends Phaser.Scene {
         frames: { start: 0, end: 2 },
         frameRate: 3,
         y: 220 * this.scaleY,
+        hp: 1,
       },
       {
         sprite: "obstacle-moving-2",
@@ -195,6 +199,7 @@ export class Start extends Phaser.Scene {
         frames: { start: 0, end: 4 },
         frameRate: 3,
         y: 220 * this.scaleY,
+        hp: 1,
       },
       {
         sprite: "obstacle-moving-3",
@@ -202,6 +207,7 @@ export class Start extends Phaser.Scene {
         frames: { start: 0, end: 3 },
         frameRate: 3,
         y: 220 * this.scaleY,
+        hp: 1,
       },
       {
         sprite: "obstacle-moving-4",
@@ -209,6 +215,7 @@ export class Start extends Phaser.Scene {
         frames: { start: 0, end: 2 },
         frameRate: 3,
         y: 220 * this.scaleY,
+        hp: 2,
       },
       {
         sprite: "obstacle-moving-5",
@@ -216,6 +223,7 @@ export class Start extends Phaser.Scene {
         frames: { start: 0, end: 3 },
         frameRate: 3,
         y: 220 * this.scaleY,
+        hp: 1,
       },
       {
         sprite: "obstacle-moving-6",
@@ -223,11 +231,13 @@ export class Start extends Phaser.Scene {
         frames: { start: 0, end: 4 },
         frameRate: 3,
         y: 220 * this.scaleY,
+        hp: 2,
       },
       {
         sprite: "obstacle-static-1",
         anim: null,
         y: 220 * this.scaleY,
+        hp: 1,
       },
     ];
   }
@@ -346,6 +356,76 @@ export class Start extends Phaser.Scene {
         repeat: -1,
       });
     });
+
+    this.createVFXAnimations();
+  }
+
+  createVFXAnimations() {
+    const animations = [
+      { key: "fireball_fly", texture: "fireball", frameRate: 12 },
+      { key: "fireball", texture: "fireball", frameRate: 12 },
+      { key: "impact-hit", texture: "impact-hit", frameRate: 14, repeat: 0 },
+      {
+        key: "sx-impact-hit",
+        texture: "sx-impact-hit",
+        frameRate: 14,
+        repeat: 0,
+      },
+      {
+        key: "vfx-fireblast",
+        texture: "vfx-fireblast",
+        frameRate: 12,
+        repeat: 0,
+      },
+      {
+        key: "vfx-explosion",
+        texture: "vfx-explosion",
+        frameRate: 14,
+        repeat: 0,
+      },
+      { key: "vfx-windball", texture: "vfx-windball", frameRate: 12 },
+      { key: "vfx-leafball", texture: "vfx-leafball", frameRate: 12 },
+      { key: "vfx-rainbowball", texture: "vfx-rainbowball", frameRate: 12 },
+      {
+        key: "vfx-gnd-blast",
+        texture: "vfx-gnd-blast",
+        frameRate: 12,
+        repeat: 0,
+      },
+      {
+        key: "vfx-tiny-fire-impact",
+        texture: "vfx-tiny-fire-impact",
+        frameRate: 14,
+        repeat: 0,
+      },
+      {
+        key: "vfx-watergun-impact",
+        texture: "vfx-watergun-impact",
+        frameRate: 14,
+        repeat: 0,
+      },
+      {
+        key: "vfx-watergun-body",
+        texture: "vfx-watergun-body",
+        frameRate: 12,
+      },
+      {
+        key: "vfx-watergun-stream",
+        texture: "vfx-watergun-stream",
+        frameRate: 12,
+      },
+    ];
+
+    animations.forEach(({ key, texture, frameRate, repeat = -1 }) => {
+      if (this.anims.exists(key) || !this.textures.exists(texture)) return;
+
+      this.anims.create({
+        key,
+        frames: this.anims.generateFrameNumbers(texture),
+        frameRate,
+        repeat,
+      });
+    });
   }
 
   /* ───────────────── ENVIRONMENT ───────────────── */
@@ -380,6 +460,8 @@ export class Start extends Phaser.Scene {
     const digimon = GameState.selectedDigimon || "agumon";
     const profile = resolveProfile(digimon);
     const { body } = profile;
+    this.playerProfile = profile;
+    this.playerProjectileAttack = this.resolveProjectileAttack(profile);
 
     this.player = this.physics.add.sprite(
       this.playerStartX,
@@ -406,16 +488,38 @@ export class Start extends Phaser.Scene {
     this.player.play(`${digimon}_run`);
 
     this.player.on("animationcomplete", (anim) => {
-      if (anim.key === `${digimon}_jump`) {
+      if (
+        anim.key === `${digimon}_jump` ||
+        anim.key === this.getAttackAnimationKey()
+      ) {
         this.player.play(`${digimon}_run`);
       }
     });
+  }
+
+  resolveProjectileAttack(profile) {
+    return Object.values(profile.attacks || {}).find(
+      (attack) => attack && attack.type === "projectile" && attack.projectile,
+    );
+  }
+
+  getAttackAnimationKey() {
+    const digimon = GameState.selectedDigimon || "agumon";
+    const anim = this.playerProjectileAttack?.anim;
+    return anim ? `${digimon}_${anim}` : null;
   }
 
   /* ───────────────── OBSTACLES ───────────────── */
 
   createObstacles() {
     this.obstacles = this.physics.add.group({
+      allowGravity: false,
+      immovable: true,
+    });
+  }
+
+  createProjectiles() {
+    this.projectiles = this.physics.add.group({
       allowGravity: false,
       immovable: true,
     });
@@ -442,6 +546,9 @@ export class Start extends Phaser.Scene {
     const type = Phaser.Utils.Array.GetRandom(this.obstacleTypes);
     const obs = this.obstacles.create(this.obstacleSpawnX, type.y, type.sprite);
 
+    obs.maxHp = type.hp || 1;
+    obs.hp = obs.maxHp;
+    obs.obstacleType = type;
     obs.body.setSize(obs.width * 0.7, obs.height * 0.8);
     obs.body.setOffset(obs.width * 0.15, obs.height * 0.2);
     obs.setVelocityX(this.currentObstacleSpeed);
@@ -584,6 +691,16 @@ export class Start extends Phaser.Scene {
       this.collectibles,
       (_, collectible) => {
         this.collectCollectible(collectible);
+      },
+    );
+
+    this.createProjectiles();
+
+    this.physics.add.overlap(
+      this.projectiles,
+      this.obstacles,
+      (projectile, obstacle) => {
+        this.handleProjectileObstacleHit(projectile, obstacle);
       },
     );
   }
@@ -805,6 +922,45 @@ export class Start extends Phaser.Scene {
     }
   }
 
+  handleProjectileObstacleHit(projectile, obstacle) {
+    if (
+      !projectile ||
+      !projectile.active ||
+      !obstacle ||
+      !obstacle.active ||
+      this.gameOver
+    ) {
+      return;
+    }
+
+    obstacle.hp = (obstacle.hp || 1) - (projectile.damage || 1);
+    this.spawnImpactVFX(projectile.x, projectile.y, projectile.impactVFX);
+    projectile.destroy();
+
+    if (obstacle.hp <= 0) {
+      obstacle.destroy();
+    } else {
+      obstacle.setTint(0xffdddd);
+      this.time.delayedCall(80, () => {
+        if (obstacle && obstacle.active) obstacle.clearTint();
+      });
+    }
+  }
+
+  spawnImpactVFX(x, y, key) {
+    if (!key || !this.textures.exists(key)) return;
+
+    const impact = this.add.sprite(x, y, key);
+    impact.setDepth(20);
+
+    if (this.anims.exists(key)) {
+      impact.play(key);
+      impact.once("animationcomplete", () => impact.destroy());
+    } else {
+      this.time.delayedCall(120, () => impact.destroy());
+    }
+  }
+
   triggerGameOver() {
     if (this.gameOver) return;
     this.gameOver = true;
@@ -817,6 +973,14 @@ export class Start extends Phaser.Scene {
       o.setVelocityX(0);
       if (o.anims) o.anims.pause();
     });
+
+    if (this.projectiles) {
+      this.projectiles.children.iterate((projectile) => {
+        if (!projectile) return;
+        projectile.setVelocityX(0);
+        if (projectile.anims) projectile.anims.pause();
+      });
+    }
 
     this.collectibles.children.iterate((coin) => {
       if (!coin) return;
@@ -834,6 +998,9 @@ export class Start extends Phaser.Scene {
 
   setupInput() {
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.attackKey = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.Z,
+    );
   }
 
   /* ───────────────── UPDATE ───────────────── */
@@ -843,8 +1010,10 @@ export class Start extends Phaser.Scene {
       this.updateJumpState();
       this.updateScore();
       this.handleJump();
+      this.handleAttack();
       this.scrollWorld();
       this.cleanupObstacles();
+      this.cleanupProjectiles();
       this.cleanupCollectibles();
       this.updateShieldIndicator();
       this.updatePowerUpIndicator();
@@ -883,6 +1052,114 @@ export class Start extends Phaser.Scene {
     }
   }
 
+  handleAttack() {
+    if (!this.attackKey || !Phaser.Input.Keyboard.JustDown(this.attackKey)) {
+      return;
+    }
+
+    this.fireProjectileAttack();
+  }
+
+  fireProjectileAttack() {
+    const attack = this.playerProjectileAttack;
+    if (!attack || this.time.now < this.nextAttackAt) return;
+
+    this.nextAttackAt = this.time.now + (attack.cooldown || 500);
+
+    const attackAnimKey = this.getAttackAnimationKey();
+    if (attackAnimKey && this.anims.exists(attackAnimKey)) {
+      this.player.play(attackAnimKey, true);
+    }
+
+    if (this.sound.get("sfx-blast-hit")) {
+      this.sound.play("sfx-blast-hit", { volume: 0.35 });
+    }
+
+    const frameRate = 10;
+    const fireFrame = Math.max(1, attack.fireFrame || 1);
+    const fireDelay = attackAnimKey ? ((fireFrame - 1) * 1000) / frameRate : 0;
+
+    if (this.pendingAttackEvent) {
+      this.pendingAttackEvent.remove(false);
+    }
+
+    this.pendingAttackEvent = this.time.delayedCall(
+      fireDelay,
+      () => {
+        this.spawnPlayerProjectile(attack);
+        this.pendingAttackEvent = null;
+      },
+      [],
+      this,
+    );
+  }
+
+  spawnPlayerProjectile(attack) {
+    if (this.gameOver || !this.player || !this.player.active) return;
+
+    const projectileData = attack.projectile || {};
+    const texture =
+      this.getExistingTextureKey(projectileData.texture) ||
+      this.getExistingTextureKey(projectileData.anim);
+
+    if (!texture) return;
+
+    const spawnPoint = this.getProjectileSpawnPoint(projectileData);
+    const projectile = this.projectiles.create(
+      spawnPoint.x,
+      spawnPoint.y,
+      texture,
+    );
+    const scale = projectileData.scale || 1;
+
+    projectile.setOrigin(0.5, 0.5);
+    projectile.damage = attack.damage || Math.ceil(attack.power || 1);
+    projectile.impactVFX = attack.impactVFX || projectileData.impactVFX;
+    projectile.setScale(scale);
+    projectile.setDepth(15);
+    projectile.setVelocityX(
+      (projectileData.speed || 260) * this.projectileSpeedBoost,
+    );
+
+    const animKey = projectileData.anim;
+    if (animKey && this.anims.exists(animKey)) {
+      projectile.play(animKey);
+    }
+
+    if (projectile.body) {
+      const bodyWidth = Math.max(4, projectile.width * 0.7);
+      const bodyHeight = Math.max(4, projectile.height * 0.7);
+      projectile.body.setSize(bodyWidth, bodyHeight, true);
+    }
+
+    this.time.delayedCall(projectileData.lifetime || 1200, () => {
+      if (projectile && projectile.active) projectile.destroy();
+    });
+  }
+
+  getProjectileSpawnPoint(projectileData) {
+    const offsetX = projectileData.offsetX ?? 18;
+    const offsetY = projectileData.offsetY ?? 18;
+    const playerLeft =
+      this.player.x - this.player.displayWidth * this.player.originX;
+    const playerTop =
+      this.player.y - this.player.displayHeight * this.player.originY;
+
+    return {
+      x: playerLeft + offsetX,
+      y: playerTop + offsetY,
+    };
+  }
+
+  getExistingTextureKey(key) {
+    if (!key) return null;
+    if (this.textures.exists(key)) return key;
+    if (key === "leafball" && this.textures.exists("vfx-leafball")) {
+      return "vfx-leafball";
+    }
+    return null;
+  }
+
   scrollWorld() {
     this.ground.tilePositionX += 2;
     this.bgFar.tilePositionX += 0.1;
@@ -892,6 +1169,16 @@ export class Start extends Phaser.Scene {
   cleanupObstacles() {
     this.obstacles.children.iterate((o) => {
       if (o && o.x < -50) o.destroy();
+    });
+  }
+
+  cleanupProjectiles() {
+    if (!this.projectiles) return;
+
+    this.projectiles.children.iterate((projectile) => {
+      if (projectile && projectile.x > this.sceneWidth + 80) {
+        projectile.destroy();
+      }
     });
   }
 

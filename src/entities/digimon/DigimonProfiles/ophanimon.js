@@ -33,6 +33,7 @@ export const ophanimon = {
       type: "projectile",
       anim: "attack-B",
       power: 1.0,
+      damage: 1,
       antiAir: true, // 👈 aerial control
       projectile: {
         texture: "vfx-rainbowball",
@@ -50,6 +51,7 @@ export const ophanimon = {
       type: "projectile",
       anim: "attack-C",
       power: 1.0,
+      damage: 1,
       punish: true,
       desperation: true, // 👈 “phase change” feel
       hitStop: 110, // 👈 heavy hit

@@ -12,6 +12,7 @@ export const ancienttroiamon = {
       type: "projectile",
       anim: "attack-A",
       power: 1.0,
+      damage: 1,
       impactVFX: "vfx-fireblast",
       projectile: {
         texture: "leafball",
@@ -28,6 +29,7 @@ export const ancienttroiamon = {
       type: "projectile",
       anim: "attack-B",
       power: 1.0,
+      damage: 1,
       impactVFX: "vfx-fireblast",
       projectile: {
         texture: "fireball",

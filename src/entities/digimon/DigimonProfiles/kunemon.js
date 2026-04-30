@@ -28,6 +28,7 @@ export const kunemon = {
       type: "projectile",
       anim: "attack-B",
       power: 0.5,
+      damage: 1,
       impactVFX: "vfx-tiny-fire-impact",
       projectile: {
         texture: "fireball",

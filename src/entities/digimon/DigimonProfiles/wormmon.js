@@ -42,6 +42,7 @@ export const wormmon = {
       type: "projectile",
       anim: "attack-C",
       power: 0.5,
+      damage: 1,
       impactVFX: "vfx-tiny-fire-impact",
       projectile: {
         texture: "fireball",

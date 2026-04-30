@@ -47,6 +47,7 @@ export const magnamon = {
       type: "projectile",
       anim: "attack-C",
       power: 1.0,
+      damage: 1,
       antiAir: true, // 👈 jump denial
       desperation: true, // 👈 late-fight pressure
       projectile: {

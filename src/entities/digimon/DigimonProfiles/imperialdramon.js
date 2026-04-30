@@ -18,6 +18,7 @@ export const imperialdramon = {
       type: "projectile",
       anim: "attack-A",
       power: 1.0,
+      damage: 1,
       hitStop: 50, // 👈 light hit
       impactVFX: "impact-hit",
       projectile: {
@@ -34,6 +35,7 @@ export const imperialdramon = {
       type: "projectile",
       anim: "attack-B",
       power: 1.0,
+      damage: 1,
       projectile: {
         texture: "big-fireball",
         speed: 260,

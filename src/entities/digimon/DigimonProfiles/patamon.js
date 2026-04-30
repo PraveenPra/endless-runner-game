@@ -33,7 +33,8 @@ export const patamon = {
       type: "projectile",
       anim: "attack-B",
       power: 0.5,
-      hitStop: 50, // 👈 light hit
+      damage: 1,
+      hitStop: 50,
       impactVFX: "vfx-explosion",
       projectile: {
         texture: "vfx-windball",
@@ -53,7 +54,8 @@ export const patamon = {
       type: "projectile",
       anim: "attack-C",
       power: 0.8,
-      hitStop: 50, // 👈 light hit
+      damage: 1,
+      hitStop: 50,
       impactVFX: "vfx-explosion",
       projectile: {
         texture: "vfx-windball",

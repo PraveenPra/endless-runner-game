@@ -27,6 +27,7 @@ export const botomon = {
       type: "projectile",
       anim: "attack-A",
       power: 0.5,
+      damage: 1,
       impactVFX: "vfx-tiny-fire-impact",
       projectile: {
         texture: "fireball",
