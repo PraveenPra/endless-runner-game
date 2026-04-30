@@ -4,7 +4,7 @@ export const ancienttroiamon = {
     height: 39,
     offsetX: 0,
     offsetY: 0,
-    gravityY: 900
+    gravityY: 900,
   },
   attacks: {
     main: {
@@ -17,12 +17,12 @@ export const ancienttroiamon = {
         texture: "leafball",
         anim: "vfx-leafball",
         speed: 220,
-        offsetX: 26,
-        offsetY: 31,
-        lifetime: 1900
+        offsetX: 73,
+        offsetY: 7,
+        lifetime: 1900,
       },
       fireFrame: 9,
-      cooldown: 800
+      cooldown: 800,
     },
     skill1: {
       type: "projectile",
@@ -34,16 +34,16 @@ export const ancienttroiamon = {
         texture: "fireball",
         anim: "fireball_fly",
         speed: 220,
-        offsetX: 26,
-        offsetY: 20,
-        lifetime: 1900
+        offsetX: 73,
+        offsetY: 7,
+        lifetime: 1900,
       },
       fireFrame: 6,
-      cooldown: 800
-    }
+      cooldown: 800,
+    },
   },
   evolution: {
     prev: null,
-    next: "imperialdramon"
-  }
+    next: "imperialdramon",
+  },
 };

@@ -110,6 +110,7 @@ export class Start extends Phaser.Scene {
       "speedboost-powerup",
       "assets/collectables/static/speed-boost.png",
     );
+    this.load.image("evolution-powerup", "assets/vfx/power-up.png");
 
     this.load.audio("jump", "assets/sfx/jump.wav");
   }
@@ -151,11 +152,22 @@ export class Start extends Phaser.Scene {
     this.magnetDuration = 8000;
     this.speedBoostActive = false;
     this.speedBoostDuration = 8000;
+    this.evolutionActive = false;
+    this.evolutionIntroActive = false;
+    this.evolutionDuration = 8000;
+    this.evolutionIntroDuration = 850;
+    this.evolutionSpeedMultiplier = 2.2;
+    this.evolutionIntroSpeedMultiplier = 0.08;
+    this.activeDigimonKey = GameState.selectedDigimon || "agumon";
+    this.baseDigimonKey = this.activeDigimonKey;
     this.baseObstacleSpeed = -120;
     this.currentObstacleSpeed = -120;
     this.projectileSpeedBoost = 1;
     this.nextAttackAt = 0;
     this.pendingAttackEvent = null;
+    this.evolutionTimer = null;
+    this.evolutionIntroTimer = null;
+    this.dustTrailTimer = null;
   }
 
   createLayout() {
@@ -314,6 +326,15 @@ export class Start extends Phaser.Scene {
         kind: "speedboost",
         weight: 5,
       },
+      {
+        key: "evolution",
+        sprite: "evolution-powerup",
+        anim: null,
+        scale: 1.15,
+        value: 1,
+        kind: "evolution",
+        weight: 4,
+      },
     ];
 
     this.collectibleLanes = [
@@ -457,9 +478,8 @@ export class Start extends Phaser.Scene {
   /* ───────────────── PLAYER ───────────────── */
 
   createPlayer() {
-    const digimon = GameState.selectedDigimon || "agumon";
+    const digimon = this.activeDigimonKey;
     const profile = resolveProfile(digimon);
-    const { body } = profile;
     this.playerProfile = profile;
     this.playerProjectileAttack = this.resolveProjectileAttack(profile);
 
@@ -470,31 +490,40 @@ export class Start extends Phaser.Scene {
     );
     this.player.setOrigin(0.5, 1);
     this.player.setCollideWorldBounds(true);
-
-    const frameWidth = this.player.frame.width;
-    const frameHeight = this.player.frame.height;
-    // const width = frameWidth * body.scaleX;
-    // const height = frameHeight * body.scaleY;
-
-    this.player.body.setSize(body.width, body.height);
-    // this.player.body.setOffset(body.offsetX, body.offsetY);
-    this.player.body.setOffset(
-      frameWidth / 2 - body.width / 2 + body.offsetX,
-      frameHeight - body.height + body.offsetY,
-    );
-    this.player.body.setGravityY(body.gravityY);
-    this.player.body.setCollideWorldBounds(true);
+    this.applyPlayerProfile(profile, 1);
 
     this.player.play(`${digimon}_run`);
 
     this.player.on("animationcomplete", (anim) => {
       if (
-        anim.key === `${digimon}_jump` ||
+        anim.key === `${this.activeDigimonKey}_jump` ||
         anim.key === this.getAttackAnimationKey()
       ) {
-        this.player.play(`${digimon}_run`);
+        this.playPlayerRun();
       }
     });
+  }
+
+  applyPlayerProfile(profile, visualScale = 1) {
+    const { body } = profile;
+    const frameWidth = this.player.frame.width;
+    const frameHeight = this.player.frame.height;
+
+    this.player.setScale(visualScale);
+    this.player.body.setSize(body.width * visualScale, body.height * visualScale);
+    this.player.body.setOffset(
+      frameWidth / 2 - (body.width * visualScale) / 2 + body.offsetX,
+      frameHeight - body.height * visualScale + body.offsetY,
+    );
+    this.player.body.setGravityY(body.gravityY);
+    this.player.body.setCollideWorldBounds(true);
+  }
+
+  playPlayerRun() {
+    const runKey = `${this.activeDigimonKey}_run`;
+    if (this.anims.exists(runKey)) {
+      this.player.play(runKey, true);
+    }
   }
 
   resolveProjectileAttack(profile) {
@@ -504,9 +533,8 @@ export class Start extends Phaser.Scene {
   }
 
   getAttackAnimationKey() {
-    const digimon = GameState.selectedDigimon || "agumon";
     const anim = this.playerProjectileAttack?.anim;
-    return anim ? `${digimon}_${anim}` : null;
+    return anim ? `${this.activeDigimonKey}_${anim}` : null;
   }
 
   /* ───────────────── OBSTACLES ───────────────── */
@@ -655,6 +683,12 @@ export class Start extends Phaser.Scene {
     });
     this.speedBoostText.setVisible(false);
 
+    this.evolutionText = this.add.text(150, 54, "RAMPAGE", {
+      fontSize: "14px",
+      fill: "#ffeb3b",
+    });
+    this.evolutionText.setVisible(false);
+
     this.gameOverText = this.add
       .text(this.sceneWidth / 2, this.gameOverY, "GAME OVER", {
         fontSize: "24px",
@@ -732,6 +766,8 @@ export class Start extends Phaser.Scene {
       this.activateMagnet();
     } else if (type.kind === "speedboost") {
       this.activateSpeedBoost();
+    } else if (type.kind === "evolution") {
+      this.activateEvolution();
     }
 
     collectible.destroy();
@@ -768,32 +804,12 @@ export class Start extends Phaser.Scene {
 
   activateSpeedBoost() {
     this.speedBoostActive = true;
-    this.currentObstacleSpeed = this.baseObstacleSpeed * 1.8;
-    this.obstacles.children.iterate((o) => {
-      if (o && o.active) {
-        o.setVelocityX(this.currentObstacleSpeed);
-      }
-    });
-    this.collectibles.children.iterate((c) => {
-      if (c && c.active) {
-        c.setVelocityX(this.currentObstacleSpeed);
-      }
-    });
+    this.updateWorldSpeed();
     this.time.addEvent({
       delay: this.speedBoostDuration,
       callback: () => {
         this.speedBoostActive = false;
-        this.currentObstacleSpeed = this.baseObstacleSpeed;
-        this.obstacles.children.iterate((o) => {
-          if (o && o.active) {
-            o.setVelocityX(this.baseObstacleSpeed);
-          }
-        });
-        this.collectibles.children.iterate((c) => {
-          if (c && c.active) {
-            c.setVelocityX(this.baseObstacleSpeed);
-          }
-        });
+        this.updateWorldSpeed();
         if (this.speedBoostSprite) {
           this.speedBoostSprite.setVisible(false);
         }
@@ -804,6 +820,181 @@ export class Start extends Phaser.Scene {
       callbackScope: this,
     });
     this.updatePowerUpIndicator();
+  }
+
+  updateWorldSpeed() {
+    const speedBoostMultiplier = this.speedBoostActive ? 1.8 : 1;
+    const evolutionMultiplier = this.evolutionActive
+      ? this.evolutionSpeedMultiplier
+      : 1;
+    const introMultiplier = this.evolutionIntroActive
+      ? this.evolutionIntroSpeedMultiplier
+      : 1;
+
+    this.currentObstacleSpeed =
+      this.baseObstacleSpeed *
+      speedBoostMultiplier *
+      evolutionMultiplier *
+      introMultiplier;
+
+    this.obstacles.children.iterate((o) => {
+      if (o && o.active) {
+        o.setVelocityX(this.currentObstacleSpeed);
+      }
+    });
+    this.collectibles.children.iterate((c) => {
+      if (c && c.active) {
+        c.setVelocityX(this.currentObstacleSpeed);
+      }
+    });
+  }
+
+  activateEvolution() {
+    const baseProfile = resolveProfile(this.baseDigimonKey);
+    const nextDigimonKey = baseProfile?.evolution?.next;
+    const targetDigimonKey =
+      nextDigimonKey && this.textures.exists(nextDigimonKey)
+        ? nextDigimonKey
+        : this.baseDigimonKey;
+
+    if (this.evolutionTimer) {
+      this.evolutionTimer.remove(false);
+    }
+    if (this.evolutionIntroTimer) {
+      this.evolutionIntroTimer.remove(false);
+    }
+    if (this.dustTrailTimer) {
+      this.dustTrailTimer.remove(false);
+    }
+
+    this.evolutionActive = true;
+    this.evolutionIntroActive = true;
+    this.switchPlayerForm(targetDigimonKey, 1.35);
+    this.anchorPlayerRunPosition();
+    this.updateWorldSpeed();
+    this.playEvolutionVFX();
+
+    this.evolutionIntroTimer = this.time.addEvent({
+      delay: this.evolutionIntroDuration,
+      callback: () => {
+        this.evolutionIntroActive = false;
+        this.updateWorldSpeed();
+      },
+      callbackScope: this,
+    });
+
+    this.dustTrailTimer = this.time.addEvent({
+      delay: 90,
+      callback: this.spawnDustTrail,
+      callbackScope: this,
+      loop: true,
+    });
+
+    this.evolutionTimer = this.time.addEvent({
+      delay: this.evolutionDuration,
+      callback: this.deactivateEvolution,
+      callbackScope: this,
+    });
+
+    this.updatePowerUpIndicator();
+  }
+
+  deactivateEvolution() {
+    this.evolutionActive = false;
+    this.evolutionIntroActive = false;
+    this.switchPlayerForm(this.baseDigimonKey, 1);
+    this.anchorPlayerRunPosition();
+    this.updateWorldSpeed();
+
+    if (this.evolutionIntroTimer) {
+      this.evolutionIntroTimer.remove(false);
+      this.evolutionIntroTimer = null;
+    }
+    if (this.dustTrailTimer) {
+      this.dustTrailTimer.remove(false);
+      this.dustTrailTimer = null;
+    }
+    if (this.evolutionSprite) {
+      this.evolutionSprite.setVisible(false);
+    }
+    if (this.evolutionText) {
+      this.evolutionText.setVisible(false);
+    }
+  }
+
+  switchPlayerForm(digimonKey, visualScale) {
+    if (!this.textures.exists(digimonKey)) return;
+
+    createAnimations(this, digimonKey);
+
+    const wasOnGround =
+      this.player.body.blocked.down || this.player.body.touching.down;
+    const previousVelocityY = this.player.body.velocity.y;
+    const previousX = this.player.x;
+    const previousY = this.player.y;
+    const profile = resolveProfile(digimonKey);
+
+    this.activeDigimonKey = digimonKey;
+    this.playerProfile = profile;
+    this.playerProjectileAttack = this.resolveProjectileAttack(profile);
+    this.player.setTexture(digimonKey);
+    this.player.setPosition(previousX, previousY);
+    this.applyPlayerProfile(profile, visualScale);
+    this.player.setVelocityY(wasOnGround ? 0 : previousVelocityY);
+    this.playPlayerRun();
+  }
+
+  anchorPlayerRunPosition() {
+    if (!this.player || !this.player.active) return;
+
+    this.player.setVelocityX(0);
+    this.player.x = this.playerStartX;
+  }
+
+  playEvolutionVFX() {
+    if (this.sound.get("sfx-evolution")) {
+      this.sound.play("sfx-evolution", { volume: 0.4 });
+    }
+
+    this.cameras.main.shake(260, 0.012);
+    this.cameras.main.flash(160, 255, 245, 130);
+
+    const burst = this.add.sprite(this.player.x, this.player.y - 35 * this.scaleY, "vfx-gnd-blast");
+    burst.setDepth(25);
+    burst.setScale(2.2);
+    if (this.anims.exists("vfx-gnd-blast")) {
+      burst.play("vfx-gnd-blast");
+      burst.once("animationcomplete", () => burst.destroy());
+    } else {
+      this.time.delayedCall(180, () => burst.destroy());
+    }
+  }
+
+  spawnDustTrail() {
+    if (!this.evolutionActive || !this.player || !this.player.active) return;
+
+    const dust = this.add.sprite(
+      this.player.x - 20 * this.scaleX,
+      this.player.y - 8 * this.scaleY,
+      "vfx-gnd-blast",
+    );
+    dust.setDepth(8);
+    dust.setAlpha(0.55);
+    dust.setScale(0.8);
+
+    if (this.anims.exists("vfx-gnd-blast")) {
+      dust.play("vfx-gnd-blast");
+      dust.once("animationcomplete", () => dust.destroy());
+    } else {
+      this.tweens.add({
+        targets: dust,
+        alpha: 0,
+        scale: 1.25,
+        x: dust.x - 18 * this.scaleX,
+        duration: 220,
+        onComplete: () => dust.destroy(),
+      });
+    }
   }
 
   updatePowerUpIndicator() {
@@ -839,6 +1030,23 @@ export class Start extends Phaser.Scene {
     }
     if (this.speedBoostText) {
       this.speedBoostText.setVisible(this.speedBoostActive);
+    }
+
+    if (this.evolutionActive && !this.evolutionSprite) {
+      this.evolutionSprite = this.add.sprite(
+        this.player.x,
+        this.player.y - 58 * this.scaleY,
+        "evolution-powerup",
+      );
+      this.evolutionSprite.setScale(0.65);
+    }
+    if (this.evolutionSprite) {
+      this.evolutionSprite.setVisible(this.evolutionActive);
+      this.evolutionSprite.x = this.player.x;
+      this.evolutionSprite.y = this.player.y - 55 * this.scaleY;
+    }
+    if (this.evolutionText) {
+      this.evolutionText.setVisible(this.evolutionActive);
     }
   }
 
@@ -907,18 +1115,42 @@ export class Start extends Phaser.Scene {
   }
 
   handleObstacleHit(obstacle) {
+    if (this.evolutionActive) {
+      this.anchorPlayerRunPosition();
+      this.breakObstacle(obstacle);
+      this.anchorPlayerRunPosition();
+      return;
+    }
+
     if (this.shieldHits > 0) {
       this.shieldHits--;
       this.updateShieldIndicator();
-      obstacle.destroy();
+      this.breakObstacle(obstacle);
 
-      this.player.setVelocityX(0);
-      this.player.x = this.playerStartX;
+      this.anchorPlayerRunPosition();
 
       this.cameras.main.shake(100, 0.01);
       this.cameras.main.flash(100, 100, 200, 255);
     } else {
       this.triggerGameOver();
+    }
+  }
+
+  breakObstacle(obstacle) {
+    if (!obstacle || !obstacle.active) return;
+
+    const x = obstacle.x;
+    const y = obstacle.y;
+    const impactKey = this.textures.exists("vfx-explosion")
+      ? "vfx-explosion"
+      : "impact-hit";
+
+    obstacle.destroy();
+    this.spawnImpactVFX(x, y, impactKey);
+    this.cameras.main.shake(120, 0.009);
+
+    if (this.sound.get("sfx-blast-hit")) {
+      this.sound.play("sfx-blast-hit", { volume: 0.25 });
     }
   }
 
@@ -1039,15 +1271,16 @@ export class Start extends Phaser.Scene {
   }
 
   handleJump() {
-    const digimon = GameState.selectedDigimon || "agumon";
-
     if (
       Phaser.Input.Keyboard.JustDown(this.cursors.space) &&
       this.jumpCount < this.maxJumps
     ) {
       this.jumpCount += 1;
       this.player.setVelocityY(-600);
-      this.player.play(`${digimon}_jump`, true);
+      const jumpKey = `${this.activeDigimonKey}_jump`;
+      if (this.anims.exists(jumpKey)) {
+        this.player.play(jumpKey, true);
+      }
       this.sound.play("jump");
     }
   }
@@ -1171,9 +1404,10 @@ export class Start extends Phaser.Scene {
   }
 
   scrollWorld() {
-    this.ground.tilePositionX += 2;
-    this.bgFar.tilePositionX += 0.1;
-    this.bgMid.tilePositionX += 0.6;
+    const speedScale = Math.abs(this.currentObstacleSpeed / this.baseObstacleSpeed);
+    this.ground.tilePositionX += 2 * speedScale;
+    this.bgFar.tilePositionX += 0.1 * speedScale;
+    this.bgMid.tilePositionX += 0.6 * speedScale;
   }
 
   cleanupObstacles() {
