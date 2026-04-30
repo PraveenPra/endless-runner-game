@@ -95,15 +95,6 @@ export class Start extends Phaser.Scene {
         frameHeight: 16,
       },
     );
-    this.load.spritesheet(
-      "collectible-eggs",
-      "assets/collectables/static/eggs.png",
-      {
-        frameWidth: 64,
-        frameHeight: 64,
-      },
-    );
-
     this.load.image("shield-powerup", "assets/collectables/static/shield.png");
     this.load.image("magnet-powerup", "assets/collectables/static/magnet.png");
     this.load.image(
@@ -142,6 +133,7 @@ export class Start extends Phaser.Scene {
     this.coins = GameState.currency.coins;
     this.gems = GameState.currency.gems;
     this.eggs = GameState.currency.eggs;
+    this.heldEggFrameIndex = GameState.hatchery.pendingEgg?.frameIndex ?? null;
     this.scoreSpeed = 0.01;
     this.gameOver = false;
     this.maxJumps = 2;
@@ -610,7 +602,9 @@ export class Start extends Phaser.Scene {
     collectible.setVelocityX(this.currentObstacleSpeed);
 
     if (type.useRandomFrame) {
-      collectible.setFrame(Phaser.Math.Between(0, 49));
+      const frameIndex = Phaser.Math.Between(0, 49);
+      collectible.eggFrameIndex = frameIndex;
+      collectible.setFrame(frameIndex);
     } else if (type.anim) {
       collectible.play(type.anim);
     }
@@ -660,10 +654,15 @@ export class Start extends Phaser.Scene {
       fill: "#6cff8f",
     });
 
-    this.eggText = this.add.text(10, 76, "EGGS: 0", {
+    this.eggText = this.add.text(10, 76, "EGG:", {
       fontSize: "14px",
       fill: "#ffdcaa",
     });
+    this.eggSlot = this.add
+      .sprite(58, 84, "collectible-eggs")
+      .setScale(0.32)
+      .setVisible(false);
+    this.updateHeldEggIndicator();
 
     this.shieldText = this.add.text(10, 98, "SHIELD: 0", {
       fontSize: "14px",
@@ -698,12 +697,27 @@ export class Start extends Phaser.Scene {
       .setVisible(false);
 
     this.restartText = this.add
-      .text(this.sceneWidth / 2, this.restartY, "Press SPACE to Restart", {
+      .text(this.sceneWidth / 2, this.restartY, "SPACE: Restart", {
         fontSize: "12px",
         fill: "#fff",
       })
       .setOrigin(0.5)
       .setVisible(false);
+
+    this.menuText = this.add
+      .text(this.sceneWidth / 2, this.restartY + 26 * this.scaleY, "MAIN MENU", {
+        fontSize: "13px",
+        fill: "#000000",
+        backgroundColor: "#ffdcaa",
+        padding: { x: 12, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+
+    this.menuText.on("pointerdown", () => {
+      this.scene.start("MainMenuScene");
+    });
   }
 
   /* ───────────────── COLLISIONS ───────────────── */
@@ -757,9 +771,7 @@ export class Start extends Phaser.Scene {
       GameState.currency.addGems(type.value);
       this.gemText.setText("GEMS: " + this.gems);
     } else if (type.kind === "egg") {
-      this.eggs += type.value;
-      GameState.currency.addEggs(type.value);
-      this.eggText.setText("EGGS: " + this.eggs);
+      this.collectEgg(collectible);
     } else if (type.kind === "shield") {
       this.collectShield();
     } else if (type.kind === "magnet") {
@@ -820,6 +832,27 @@ export class Start extends Phaser.Scene {
       callbackScope: this,
     });
     this.updatePowerUpIndicator();
+  }
+
+  collectEgg(collectible) {
+    const frameIndex = collectible.eggFrameIndex ?? collectible.frame?.name ?? 0;
+    this.heldEggFrameIndex = Number(frameIndex) || 0;
+    GameState.hatchery.savePendingEgg({
+      frameIndex: this.heldEggFrameIndex,
+      collectedAt: Date.now(),
+    });
+    this.updateHeldEggIndicator();
+  }
+
+  updateHeldEggIndicator() {
+    if (!this.eggText || !this.eggSlot) return;
+
+    const hasEgg = this.heldEggFrameIndex !== null;
+    this.eggText.setText(hasEgg ? "EGG:" : "EGG: NONE");
+    this.eggSlot.setVisible(hasEgg);
+    if (hasEgg) {
+      this.eggSlot.setFrame(this.heldEggFrameIndex);
+    }
   }
 
   updateWorldSpeed() {
@@ -1224,6 +1257,7 @@ export class Start extends Phaser.Scene {
 
     this.gameOverText.setVisible(true);
     this.restartText.setVisible(true);
+    this.menuText.setVisible(true);
   }
 
   /* ───────────────── INPUT ───────────────── */

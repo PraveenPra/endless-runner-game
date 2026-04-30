@@ -17,6 +17,10 @@ export class Preload extends Phaser.Scene {
     loadDigimons(this);
     loadBackgrounds(this);
     loadVFX(this);
+    this.load.spritesheet("collectible-eggs", "assets/collectables/static/eggs.png", {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
     // loadItems(this);
     // loadTilemaps(this);
     loadAudio(this);

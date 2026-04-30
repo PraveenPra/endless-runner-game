@@ -48,12 +48,25 @@ export class MainMenuScene extends Phaser.Scene {
       this.scene.start("CharacterSelect");
     });
 
+    const hatchery = this.add
+      .text(width / 2, 380, "Hatchery", {
+        fontSize: "28px",
+        color: "#ffdcaa",
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    hatchery.on("pointerdown", () => {
+      this.scene.start("HatcheryScene");
+    });
+
     // ==========================
     // HOVER EFFECT
     // ==========================
 
     this.addHover(platformer);
     this.addHover(survival);
+    this.addHover(hatchery);
   }
 
   addHover(btn) {

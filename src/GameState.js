@@ -74,8 +74,35 @@ export const GameState = {
     },
   },
 
+  hatchableDigimon: [
+    "botomon",
+    "wormmon",
+    "kunemon",
+    "chivmon",
+    "gabumon",
+    "magnamon",
+    "patamon",
+    "imperialdramon",
+    "ancienttroiamon",
+    "ophanimon",
+  ],
+
+  allPlayableDigimon: [
+    "botomon",
+    "wormmon",
+    "kunemon",
+    "agumon",
+    "chivmon",
+    "gabumon",
+    "magnamon",
+    "patamon",
+    "imperialdramon",
+    "ancienttroiamon",
+    "ophanimon",
+  ],
+
   // base forms the player can switch to
-  unlockedBaseForms: new Set(["agumon", "gabumon", "patamon"]),
+  unlockedBaseForms: new Set(["agumon"]),
 
   // evolutions the player has unlocked
   unlockedEvolutions: new Set([
@@ -109,4 +136,75 @@ export const GameState = {
       this.eggs += value;
     },
   },
+
+  hatchery: {
+    pendingEgg: null,
+    lastHatchedDigimon: null,
+
+    load() {
+      try {
+        const pending = localStorage.getItem("hatchery_pending_egg");
+        const unlocked = localStorage.getItem("unlocked_base_forms");
+
+        this.pendingEgg = pending ? JSON.parse(pending) : null;
+        if (unlocked) {
+          GameState.unlockedBaseForms = new Set(JSON.parse(unlocked));
+        }
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+    },
+
+    savePendingEgg(egg) {
+      this.pendingEgg = egg;
+      try {
+        localStorage.setItem("hatchery_pending_egg", JSON.stringify(egg));
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+    },
+
+    clearPendingEgg() {
+      this.pendingEgg = null;
+      try {
+        localStorage.removeItem("hatchery_pending_egg");
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+    },
+
+    saveUnlocks() {
+      try {
+        localStorage.setItem(
+          "unlocked_base_forms",
+          JSON.stringify([...GameState.unlockedBaseForms]),
+        );
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+    },
+
+    hatchPendingEgg() {
+      if (!this.pendingEgg) return null;
+
+      const locked = GameState.hatchableDigimon.filter(
+        (key) => !GameState.unlockedBaseForms.has(key),
+      );
+
+      if (!locked.length) {
+        this.clearPendingEgg();
+        return null;
+      }
+
+      const eggIndex = this.pendingEgg.frameIndex || 0;
+      const digimonKey = locked[eggIndex % locked.length];
+      GameState.unlockedBaseForms.add(digimonKey);
+      this.lastHatchedDigimon = digimonKey;
+      this.clearPendingEgg();
+      this.saveUnlocks();
+      return digimonKey;
+    },
+  },
 };
+
+GameState.hatchery.load();

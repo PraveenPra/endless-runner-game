@@ -7,25 +7,15 @@ export class CharacterSelect extends Phaser.Scene {
   }
 
   create() {
-    this.characters = [
-      "botomon",
-      "wormmon",
-      "kunemon",
-      "agumon",
-      "chivmon",
-      "gabumon",
-      "magnamon",
-      "patamon",
-      "imperialdramon",
-      "ancienttroiamon",
-      "ophanimon",
-    ];
+    this.characters = GameState.allPlayableDigimon;
 
     this.selectedKey = null;
     this.sprites = [];
+    this.lockLabels = [];
 
     this.characters.forEach((key) => {
       createAnimations(this, key);
+      const unlocked = GameState.unlockedBaseForms.has(key);
       const sprite = this.add
         .sprite(0, 0, key)
         .setInteractive({ useHandCursor: true });
@@ -35,8 +25,20 @@ export class CharacterSelect extends Phaser.Scene {
       const animKey = this.anims.exists(idleKey) ? idleKey : flyKey;
 
       sprite.anims.play(animKey, true);
+      sprite.digimonKey = key;
+      sprite.locked = !unlocked;
+      sprite.setAlpha(unlocked ? 0.85 : 0.22);
       sprite.on("pointerdown", () => this.select(key));
       this.sprites.push(sprite);
+
+      const lockLabel = this.add
+        .text(0, 0, "LOCKED", {
+          fontSize: "10px",
+          color: "#ff7777",
+        })
+        .setOrigin(0.5)
+        .setVisible(!unlocked);
+      this.lockLabels.push(lockLabel);
     });
 
     Phaser.Actions.GridAlign(this.sprites, {
@@ -45,6 +47,11 @@ export class CharacterSelect extends Phaser.Scene {
       cellHeight: 100,
       x: this.cameras.main.centerX - 270,
       y: 120,
+    });
+
+    this.sprites.forEach((sprite, index) => {
+      const label = this.lockLabels[index];
+      label.setPosition(sprite.x, sprite.y + 34);
     });
 
     this.add
@@ -101,11 +108,18 @@ export class CharacterSelect extends Phaser.Scene {
   }
 
   select(key) {
+    if (!GameState.unlockedBaseForms.has(key)) {
+      this.showMessage("Hatch this Digimon first!");
+      return;
+    }
+
     this.selectedKey = key;
     GameState.selectedDigimon = key;
 
     this.sprites.forEach((sprite) => {
-      sprite.setAlpha(sprite.texture.key === key ? 1 : 0.3);
+      const unlocked = !sprite.locked;
+      const selected = sprite.digimonKey === key;
+      sprite.setAlpha(selected ? 1 : unlocked ? 0.55 : 0.18);
     });
   }
 
