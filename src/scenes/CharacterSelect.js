@@ -59,7 +59,7 @@ export class CharacterSelect extends Phaser.Scene {
 
   createButtons() {
     this.add
-      .text(350, 530, "← EDIT BODY", {
+      .text(260, 530, "EDIT BODY", {
         fontSize: "18px",
         color: "#ffffff",
         backgroundColor: "#333333",
@@ -70,7 +70,18 @@ export class CharacterSelect extends Phaser.Scene {
       .on("pointerdown", () => this.editBody());
 
     this.add
-      .text(610, 530, "START →", {
+      .text(480, 530, "EDIT PROJECTILES", {
+        fontSize: "18px",
+        color: "#ffffff",
+        backgroundColor: "#1f4d66",
+        padding: { x: 15, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", () => this.editProjectiles());
+
+    this.add
+      .text(700, 530, "START", {
         fontSize: "18px",
         color: "#000000",
         backgroundColor: "#00ff00",
@@ -81,7 +92,7 @@ export class CharacterSelect extends Phaser.Scene {
       .on("pointerdown", () => this.startGame());
 
     this.add
-      .text(480, 530, "SELECT A DIGIMON", {
+      .text(480, 495, "SELECT A DIGIMON", {
         fontSize: "14px",
         color: "#888888",
       })
@@ -106,6 +117,14 @@ export class CharacterSelect extends Phaser.Scene {
     this.scene.start("EditBodyScene", { digimon: this.selectedKey });
   }
 
+  editProjectiles() {
+    if (!this.selectedKey) {
+      this.showMessage("Select a digimon first!");
+      return;
+    }
+    this.scene.start("EditProjectileScene", { digimon: this.selectedKey });
+  }
+
   startGame() {
     if (!this.selectedKey) {
       this.showMessage("Select a digimon first!");
@@ -117,7 +136,7 @@ export class CharacterSelect extends Phaser.Scene {
   showMessage(text) {
     if (this.msg) this.msg.destroy();
     this.msg = this.add
-      .text(480, 490, text, {
+      .text(480, 470, text, {
         fontSize: "16px",
         color: "#ff0000",
       })

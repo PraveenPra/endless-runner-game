@@ -6,55 +6,37 @@ export const ophanimon = {
     offsetY: 0,
     gravityY: 900,
   },
-
   movement: {
     mode: "multi-domain",
     domains: ["ground", "air"],
     default: "ground",
   },
-
   attacks: {
     main: {
-      type: "melee",
-      anim: "attack-A",
-      power: 1.0,
-      fireFrames: [4, 6], // active hit window
-      hitbox: {
-        width: 10,
-        height: 26,
-        offsetX: 36,
-        offsetY: 26,
-        duration: 80, // per-frame lifetime
-        // duration: 320,
-      },
-      cooldown: 1500,
-    },
-    skill1: {
       type: "projectile",
       anim: "attack-B",
-      power: 1.0,
+      power: 1,
       damage: 1,
-      antiAir: true, // 👈 aerial control
+      antiAir: true,
       projectile: {
         texture: "vfx-rainbowball",
         anim: "vfx-rainbowball",
         speed: 260,
-        offsetX: 47,
-        offsetY: 35,
+        offsetX: 70,
+        offsetY: 28,
         lifetime: 1200,
       },
       fireFrame: 8,
       cooldown: 800,
     },
-
-    skill2: {
+    skill1: {
       type: "projectile",
       anim: "attack-C",
-      power: 1.0,
+      power: 1,
       damage: 1,
       punish: true,
-      desperation: true, // 👈 “phase change” feel
-      hitStop: 110, // 👈 heavy hit
+      desperation: true,
+      hitStop: 110,
       impactVFX: "impact-hit",
       projectile: {
         texture: "vfx-rainbowball",

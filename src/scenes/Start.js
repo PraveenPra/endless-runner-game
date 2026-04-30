@@ -479,8 +479,8 @@ export class Start extends Phaser.Scene {
     this.player.body.setSize(body.width, body.height);
     // this.player.body.setOffset(body.offsetX, body.offsetY);
     this.player.body.setOffset(
-      frameWidth / 2 - body.width / 2,
-      frameHeight - body.height,
+      frameWidth / 2 - body.width / 2 + body.offsetX,
+      frameHeight - body.height + body.offsetY,
     );
     this.player.body.setGravityY(body.gravityY);
     this.player.body.setCollideWorldBounds(true);
@@ -1140,14 +1140,24 @@ export class Start extends Phaser.Scene {
   getProjectileSpawnPoint(projectileData) {
     const offsetX = projectileData.offsetX ?? 18;
     const offsetY = projectileData.offsetY ?? 18;
-    const playerLeft =
-      this.player.x - this.player.displayWidth * this.player.originX;
-    const playerTop =
-      this.player.y - this.player.displayHeight * this.player.originY;
+    const bodyRect = this.getPlayerBodyRect();
 
     return {
-      x: playerLeft + offsetX,
-      y: playerTop + offsetY,
+      x: bodyRect.x + offsetX,
+      y: bodyRect.y + offsetY,
+    };
+  }
+
+  getPlayerBodyRect() {
+    const body = this.player.body;
+    const displayOriginX = this.player.displayOriginX * this.player.scaleX;
+    const displayOriginY = this.player.displayOriginY * this.player.scaleY;
+
+    return {
+      x: this.player.x + body.offset.x * this.player.scaleX - displayOriginX,
+      y: this.player.y + body.offset.y * this.player.scaleY - displayOriginY,
+      width: body.width,
+      height: body.height,
     };
   }
 

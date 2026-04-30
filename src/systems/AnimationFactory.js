@@ -12,8 +12,11 @@ export function createAnimations(scene, textureKey) {
   });
 
   Object.keys(groups).forEach((animKey) => {
+    const key = `${textureKey}_${animKey}`;
+    if (scene.anims.exists(key)) return;
+
     scene.anims.create({
-      key: `${textureKey}_${animKey}`,
+      key,
       frames: groups[animKey]
         .sort()
         .map((f) => ({ key: textureKey, frame: f })),

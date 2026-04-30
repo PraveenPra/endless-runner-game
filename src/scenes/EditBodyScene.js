@@ -156,17 +156,28 @@ export class EditBodyScene extends Phaser.Scene {
     );
     this.sprite.body.setGravityY(gravityY);
 
-    this.bodyBox.setPosition(
-      this.sprite.body.x,
-      this.sprite.body.y
-    );
-    this.bodyBox.setSize(this.sprite.body.width, this.sprite.body.height);
+    const bodyRect = this.getBodyRect();
+    this.bodyBox.setPosition(bodyRect.x, bodyRect.y);
+    this.bodyBox.setSize(bodyRect.width, bodyRect.height);
 
     this.labels.width.setText(String(width));
     this.labels.height.setText(String(height));
     this.labels.offsetX.setText(String(offsetX));
     this.labels.offsetY.setText(String(offsetY));
     this.labels.gravityY.setText(String(gravityY));
+  }
+
+  getBodyRect() {
+    const body = this.sprite.body;
+    const displayOriginX = this.sprite.displayOriginX * this.sprite.scaleX;
+    const displayOriginY = this.sprite.displayOriginY * this.sprite.scaleY;
+
+    return {
+      x: this.sprite.x + body.offset.x * this.sprite.scaleX - displayOriginX,
+      y: this.sprite.y + body.offset.y * this.sprite.scaleY - displayOriginY,
+      width: body.width,
+      height: body.height,
+    };
   }
 
   updateHighlight() {

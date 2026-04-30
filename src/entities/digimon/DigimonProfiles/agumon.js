@@ -6,39 +6,8 @@ export const agumon = {
     offsetY: 0,
     gravityY: 900,
   },
-
   attacks: {
     main: {
-      type: "melee",
-      anim: "attack-A",
-      power: 0.2,
-      fireFrames: [4, 5], // active hit window
-      hitbox: {
-        width: 9,
-        height: 15,
-        offsetX: 19,
-        offsetY: 19,
-        // statusEffect: "burn",
-        duration: 80, // per-frame lifetime
-      },
-      cooldown: 300,
-    },
-    skill1: {
-      type: "melee",
-      anim: "attack-B",
-      power: 0.2,
-      fireFrames: [5], // active hit window
-      hitbox: {
-        width: 11,
-        height: 15,
-        offsetX: 11,
-        offsetY: 24,
-        // duration: 320,
-        // duration: 80, // per-frame lifetime
-      },
-      cooldown: 1500,
-    },
-    skill2: {
       type: "projectile",
       anim: "attack-C",
       power: 0.5,
@@ -48,8 +17,8 @@ export const agumon = {
         texture: "fireball",
         anim: "fireball_fly",
         speed: 220,
-        offsetX: 50,
-        offsetY: 50,
+        offsetX: 30,
+        offsetY: 2,
         lifetime: 1900,
         statusEffect: "burn",
         hitReaction: "launch",
@@ -57,25 +26,10 @@ export const agumon = {
       fireFrame: 5,
       cooldown: 800,
     },
-    skill3: {
-      type: "melee",
-      anim: "attack-D",
-      power: 3.0,
-      fireFrames: [3, 4, 5, 6], // active hit window
-      hitbox: {
-        width: 33,
-        height: 30,
-        offsetX: -1,
-        offsetY: 13,
-        // duration: 320,
-        // duration: 80, // per-frame lifetime
-      },
-      cooldown: 1500,
-    },
-    skill4: {
+    skill1: {
       type: "projectile",
       anim: "attack-E",
-      power: 4.0,
+      power: 4,
       impactVFX: "vfx-gnd-blast",
       projectile: {
         motion: "arc",
@@ -83,7 +37,6 @@ export const agumon = {
         explodeOnGround: true,
         explosionRadius: 164,
         texture: "big-fireball",
-        // scale: 0.1,
         speed: 220,
         offsetX: 15,
         offsetY: -10,
@@ -93,11 +46,9 @@ export const agumon = {
       cooldown: 800,
     },
   },
-
   move: {
     speed: 200,
   },
-
   evolution: {
     prev: null,
     next: "imperialdramon",

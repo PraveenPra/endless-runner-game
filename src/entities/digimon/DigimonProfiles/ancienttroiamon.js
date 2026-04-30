@@ -4,14 +4,13 @@ export const ancienttroiamon = {
     height: 39,
     offsetX: 0,
     offsetY: 0,
-    gravityY: 900,
+    gravityY: 900
   },
-
   attacks: {
     main: {
       type: "projectile",
       anim: "attack-A",
-      power: 1.0,
+      power: 1,
       damage: 1,
       impactVFX: "vfx-fireblast",
       projectile: {
@@ -20,15 +19,15 @@ export const ancienttroiamon = {
         speed: 220,
         offsetX: 26,
         offsetY: 31,
-        lifetime: 1900,
+        lifetime: 1900
       },
       fireFrame: 9,
-      cooldown: 800,
+      cooldown: 800
     },
     skill1: {
       type: "projectile",
       anim: "attack-B",
-      power: 1.0,
+      power: 1,
       damage: 1,
       impactVFX: "vfx-fireblast",
       projectile: {
@@ -37,15 +36,14 @@ export const ancienttroiamon = {
         speed: 220,
         offsetX: 26,
         offsetY: 20,
-        lifetime: 1900,
+        lifetime: 1900
       },
       fireFrame: 6,
-      cooldown: 800,
-    },
+      cooldown: 800
+    }
   },
-
   evolution: {
     prev: null,
-    next: "imperialdramon",
-  },
+    next: "imperialdramon"
+  }
 };
