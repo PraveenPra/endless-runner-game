@@ -219,7 +219,7 @@ export class Start extends Phaser.Scene {
         anim: "silver-coin-spin",
         frames: { start: 0, end: 4 },
         frameRate: 10,
-        scale: 0.8,
+        scale: 1,
         value: 1,
         kind: "coin",
         weight: 5,
@@ -230,7 +230,7 @@ export class Start extends Phaser.Scene {
         anim: "gold-coin-spin",
         frames: { start: 0, end: 4 },
         frameRate: 10,
-        scale: 0.8,
+        scale: 1,
         value: 2,
         kind: "coin",
         weight: 3,
@@ -241,7 +241,7 @@ export class Start extends Phaser.Scene {
         anim: "green-gem-spin",
         frames: { start: 0, end: 3 },
         frameRate: 8,
-        scale: 0.7,
+        scale: 1,
         value: 1,
         kind: "gem",
         weight: 2,
@@ -260,7 +260,7 @@ export class Start extends Phaser.Scene {
         key: "shield",
         sprite: "shield-powerup",
         anim: null,
-        scale: 0.6,
+        scale: 1,
         value: 1,
         kind: "shield",
         weight: 7,
@@ -269,7 +269,7 @@ export class Start extends Phaser.Scene {
         key: "magnet",
         sprite: "magnet-powerup",
         anim: null,
-        scale: 0.6,
+        scale: 1,
         value: 1,
         kind: "magnet",
         weight: 5,
@@ -278,7 +278,7 @@ export class Start extends Phaser.Scene {
         key: "speedboost",
         sprite: "speedboost-powerup",
         anim: null,
-        scale: 0.6,
+        scale: 1,
         value: 1,
         kind: "speedboost",
         weight: 5,
@@ -646,7 +646,12 @@ export class Start extends Phaser.Scene {
   spawnCoinRow(type, y) {
     const count = Phaser.Math.Between(5, 9);
     const spacing = 24 * this.scaleX;
-    const pattern = Phaser.Utils.Array.GetRandom(["line", "rise", "fall", "arc"]);
+    const pattern = Phaser.Utils.Array.GetRandom([
+      "line",
+      "rise",
+      "fall",
+      "arc",
+    ]);
 
     for (let i = 0; i < count; i += 1) {
       const x = this.obstacleSpawnX + i * spacing;
