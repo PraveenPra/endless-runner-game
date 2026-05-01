@@ -2,6 +2,13 @@ import { GameState } from "../GameState.js";
 import { createAnimations } from "../systems/AnimationFactory.js";
 import { resolveProfile } from "../entities/digimon/resolveProfile.js";
 import { getMapConfig } from "../config/maps.js";
+import {
+  createBitmapLabel,
+  createButton,
+  createPanel,
+  setBitmapLabelText,
+  SMALL_FONT_SIZE,
+} from "../ui/PixelUI.js";
 
 export class Start extends Phaser.Scene {
   constructor() {
@@ -723,139 +730,139 @@ export class Start extends Phaser.Scene {
   /* ───────────────── UI ───────────────── */
 
   createUI() {
-    this.scoreText = this.add.text(10, 10, "SCORE: 0", {
-      fontSize: "14px",
-      fill: "#fff",
+    this.hudPanel = createPanel(this, 136, 55, 246, 92, {
+      depth: 50,
+      alpha: 0.9,
     });
 
-    this.coinText = this.add.text(10, 32, "COINS: 0", {
-      fontSize: "14px",
-      fill: "#ffd54a",
-    });
+    this.scoreText = createBitmapLabel(this, 30, 20, "score:0", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(52);
 
-    this.gemText = this.add.text(10, 54, "GEMS: 0", {
-      fontSize: "14px",
-      fill: "#6cff8f",
-    });
+    this.coinText = createBitmapLabel(this, 30, 48, `coins:${this.coins}`, {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(52);
 
-    this.eggText = this.add.text(10, 76, "EGG:", {
-      fontSize: "14px",
-      fill: "#ffdcaa",
-    });
+    this.gemText = createBitmapLabel(this, 30, 76, `gems:${this.gems}`, {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(52);
+
+    this.eggText = createBitmapLabel(this, 244, 20, "egg:none", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(52);
     this.eggSlot = this.add
-      .sprite(58, 84, "collectible-eggs")
+      .sprite(224, 60, "collectible-eggs")
       .setScale(0.32)
+      .setDepth(52)
       .setVisible(false);
     this.updateHeldEggIndicator();
 
-    this.shieldText = this.add.text(10, 98, "SHIELD: 0", {
-      fontSize: "14px",
-      fill: "#4fc3f7",
+    this.powerPanel = createPanel(this, this.sceneWidth - 118, 42, 210, 64, {
+      depth: 50,
+      alpha: 0.86,
     });
+    this.powerPanel.setVisible(false);
+
+    this.shieldText = createBitmapLabel(this, this.sceneWidth - 206, 24, "shield:0", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(52);
     this.shieldText.setVisible(false);
 
-    this.magnetText = this.add.text(150, 10, "MAGNET", {
-      fontSize: "14px",
-      fill: "#ff6f00",
-    });
+    this.magnetText = createBitmapLabel(this, this.sceneWidth - 206, 44, "magnet", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(52);
     this.magnetText.setVisible(false);
 
-    this.speedBoostText = this.add.text(150, 32, "SPEED", {
-      fontSize: "14px",
-      fill: "#76ff03",
-    });
+    this.speedBoostText = createBitmapLabel(this, this.sceneWidth - 206, 64, "speed", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(52);
     this.speedBoostText.setVisible(false);
 
-    this.evolutionText = this.add.text(150, 54, "RAMPAGE", {
-      fontSize: "14px",
-      fill: "#ffeb3b",
-    });
+    this.evolutionText = createBitmapLabel(this, this.sceneWidth - 206, 84, "rampage", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(52);
     this.evolutionText.setVisible(false);
 
-    this.gameOverText = this.add
-      .text(this.sceneWidth / 2, this.gameOverY, "GAME OVER", {
-        fontSize: "24px",
-        fill: "#ff4444",
-      })
-      .setOrigin(0.5)
+    this.createGameOverUI();
+  }
+
+  createGameOverUI() {
+    this.gameOverItems = [];
+
+    this.gameOverOverlay = this.add
+      .rectangle(this.sceneWidth / 2, this.sceneHeight / 2, this.sceneWidth, this.sceneHeight, 0x000000, 0.45)
+      .setDepth(90)
       .setVisible(false);
 
-    this.restartText = this.add
-      .text(this.sceneWidth / 2, this.restartY, "SPACE: Restart", {
-        fontSize: "12px",
-        fill: "#fff",
-      })
-      .setOrigin(0.5)
-      .setVisible(false);
+    this.gameOverPanel = createPanel(this, this.sceneWidth / 2, this.sceneHeight / 2, 470, 368, {
+      depth: 91,
+      alpha: 0.97,
+    });
+    this.gameOverPanel.setVisible(false);
 
-    this.menuText = this.add
-      .text(
-        this.sceneWidth / 2,
-        this.restartY + 26 * this.scaleY,
-        "MAIN MENU",
-        {
-          fontSize: "13px",
-          fill: "#000000",
-          backgroundColor: "#ffdcaa",
-          padding: { x: 12, y: 6 },
-        },
-      )
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .setVisible(false);
+    this.gameOverText = createBitmapLabel(this, this.sceneWidth / 2, 132, "GAMEOVER", {
+      font: "bigFont",
+      size: 48,
+      tint: 0xf7ffe8,
+    }).setDepth(92).setVisible(false);
 
-    this.menuText.on("pointerdown", () => {
-      this.scene.start("MainMenuScene");
+    const rows = [
+      ["finalScoreText", "score:0", 190],
+      ["highScoreText", "best:0", 224],
+      ["coinsEarnedText", "coins:0", 258],
+      ["gemsEarnedText", "gems:0", 292],
+      ["eggsEarnedText", "eggs:0", 326],
+      ["distanceText", "distance:0", 360],
+    ];
+
+    rows.forEach(([prop, text, y]) => {
+      this[prop] = createBitmapLabel(this, this.sceneWidth / 2, y, text, {
+        size: SMALL_FONT_SIZE,
+        tint: 0xf7ffe8,
+      }).setDepth(92).setVisible(false);
     });
 
-    // Game over statistics text
-    this.finalScoreText = this.add
-      .text(this.sceneWidth / 2, this.gameOverY + 40, "", {
-        fontSize: "16px",
-        fill: "#fff",
-      })
-      .setOrigin(0.5)
-      .setVisible(false);
+    this.restartText = createButton(this, this.sceneWidth / 2 - 120, 430, 190, 44, "restart", () => {
+      this.scene.restart();
+    }, {
+      depth: 92,
+    });
+    this.menuText = createButton(this, this.sceneWidth / 2 + 120, 430, 190, 44, "menu", () => {
+      this.scene.start("MainMenuScene");
+    }, {
+      depth: 92,
+    });
 
-    this.highScoreText = this.add
-      .text(this.sceneWidth / 2, this.gameOverY + 60, "", {
-        fontSize: "16px",
-        fill: "#ffd700", // Gold color for high score
-      })
-      .setOrigin(0.5)
-      .setVisible(false);
-
-    this.coinsEarnedText = this.add
-      .text(this.sceneWidth / 2, this.gameOverY + 80, "", {
-        fontSize: "14px",
-        fill: "#ffd54a",
-      })
-      .setOrigin(0.5)
-      .setVisible(false);
-
-    this.gemsEarnedText = this.add
-      .text(this.sceneWidth / 2, this.gameOverY + 100, "", {
-        fontSize: "14px",
-        fill: "#6cff8f",
-      })
-      .setOrigin(0.5)
-      .setVisible(false);
-
-    this.eggsEarnedText = this.add
-      .text(this.sceneWidth / 2, this.gameOverY + 120, "", {
-        fontSize: "14px",
-        fill: "#ffdcaa",
-      })
-      .setOrigin(0.5)
-      .setVisible(false);
-
-    this.distanceText = this.add
-      .text(this.sceneWidth / 2, this.gameOverY + 140, "", {
-        fontSize: "14px",
-        fill: "#87ceeb", // Sky blue for distance
-      })
-      .setOrigin(0.5)
-      .setVisible(false);
+    this.gameOverItems = [
+      this.gameOverOverlay,
+      this.gameOverPanel,
+      this.gameOverText,
+      this.finalScoreText,
+      this.highScoreText,
+      this.coinsEarnedText,
+      this.gemsEarnedText,
+      this.eggsEarnedText,
+      this.distanceText,
+      this.restartText,
+      this.menuText,
+    ];
+    this.gameOverItems.forEach((item) => item.setVisible(false));
   }
 
   /* ───────────────── COLLISIONS ───────────────── */
@@ -903,11 +910,11 @@ export class Start extends Phaser.Scene {
     if (type.kind === "coin") {
       this.coins += type.value;
       GameState.currency.addCoins(type.value);
-      this.coinText.setText("COINS: " + this.coins);
+      setBitmapLabelText(this.coinText, `coins:${this.coins}`);
     } else if (type.kind === "gem") {
       this.gems += type.value;
       GameState.currency.addGems(type.value);
-      this.gemText.setText("GEMS: " + this.gems);
+      setBitmapLabelText(this.gemText, `gems:${this.gems}`);
     } else if (type.kind === "egg") {
       this.collectEgg(collectible);
     } else if (type.kind === "shield") {
@@ -1014,7 +1021,7 @@ export class Start extends Phaser.Scene {
     if (!this.eggText || !this.eggSlot) return;
 
     const hasEgg = this.heldEggFrameIndex !== null;
-    this.eggText.setText(hasEgg ? "EGG:" : "EGG: NONE");
+    setBitmapLabelText(this.eggText, hasEgg ? "egg" : "egg:none");
     this.eggSlot.setVisible(hasEgg);
     if (hasEgg) {
       this.eggSlot.setFrame(this.heldEggFrameIndex);
@@ -1251,6 +1258,19 @@ export class Start extends Phaser.Scene {
     if (this.evolutionText) {
       this.evolutionText.setVisible(this.evolutionActive);
     }
+
+    this.updatePowerPanelVisibility();
+  }
+
+  updatePowerPanelVisibility() {
+    if (!this.powerPanel) return;
+
+    this.powerPanel.setVisible(
+      this.shieldHits > 0 ||
+        this.magnetActive ||
+        this.speedBoostActive ||
+        this.evolutionActive,
+    );
   }
 
   updateShieldIndicator() {
@@ -1287,9 +1307,11 @@ export class Start extends Phaser.Scene {
     }
 
     if (this.shieldText) {
-      this.shieldText.setText("SHIELD: " + this.shieldHits);
+      setBitmapLabelText(this.shieldText, `shield:${this.shieldHits}`);
       this.shieldText.setVisible(this.shieldHits > 0);
     }
+
+    this.updatePowerPanelVisibility();
   }
 
   updateMagnetAttraction() {
@@ -1462,29 +1484,15 @@ export class Start extends Phaser.Scene {
 
     this.time.removeAllEvents();
 
-    this.gameOverText.setVisible(true);
-    this.restartText.setVisible(true);
-    this.menuText.setVisible(true);
+    this.gameOverItems.forEach((item) => item.setVisible(true));
 
     // Display statistics
-    this.finalScoreText
-      .setText("SCORE: " + GameState.session.score)
-      .setVisible(true);
-    this.highScoreText
-      .setText("HIGH SCORE: " + GameState.highScore)
-      .setVisible(true);
-    this.coinsEarnedText
-      .setText("COINS: " + GameState.session.coins)
-      .setVisible(true);
-    this.gemsEarnedText
-      .setText("GEMS: " + GameState.session.gems)
-      .setVisible(true);
-    this.eggsEarnedText
-      .setText("EGGS: " + GameState.session.eggs)
-      .setVisible(true);
-    this.distanceText
-      .setText("DISTANCE: " + GameState.session.distance + "m")
-      .setVisible(true);
+    setBitmapLabelText(this.finalScoreText, `score:${GameState.session.score}`);
+    setBitmapLabelText(this.highScoreText, `best:${GameState.highScore}`);
+    setBitmapLabelText(this.coinsEarnedText, `coins:${GameState.session.coins}`);
+    setBitmapLabelText(this.gemsEarnedText, `gems:${GameState.session.gems}`);
+    setBitmapLabelText(this.eggsEarnedText, `eggs:${GameState.session.eggs}`);
+    setBitmapLabelText(this.distanceText, `distance:${GameState.session.distance}`);
   }
 
   /* ───────────────── INPUT ───────────────── */
@@ -1522,7 +1530,7 @@ export class Start extends Phaser.Scene {
 
   updateScore() {
     this.score += this.scoreSpeed;
-    this.scoreText.setText("SCORE: " + Math.floor(this.score));
+    setBitmapLabelText(this.scoreText, `score:${Math.floor(this.score)}`);
   }
 
   updateJumpState() {
