@@ -1,16 +1,18 @@
+const BG_PATH = "assets/backgrounds/";
+
 export const backgrounds = [
-  { key: "bg1", path: "assets/backgrounds/plx-5.png" },
-  { key: "bg2", path: "assets/backgrounds/plx-4.png" },
-  { key: "bg3", path: "assets/backgrounds/plx-3.png" },
-  { key: "bg4", path: "assets/backgrounds/plx-2.png" },
-  { key: "bg5", path: "assets/backgrounds/plx-1.png" },
-  { key: "ground", path: "assets/ground.png" },
-  { key: "bg-far", path: "assets/sky.png" },
-  { key: "bg-mid", path: "assets/bg-mid.png" },
+  { key: "bg1", file: "plx-5.png" },
+  { key: "bg2", file: "plx-4.png" },
+  { key: "bg3", file: "plx-3.png" },
+  { key: "bg4", file: "plx-2.png" },
+  { key: "bg5", file: "plx-1.png" },
+  { key: "ground", file: "ground.png" },
+  { key: "bg-far", file: "sky.png" },
+  { key: "bg-mid", file: "bg-mid.png" },
 ];
 
 export function loadBackgrounds(scene) {
-  backgrounds.forEach((bg) => {
-    scene.load.image(bg.key, bg.path);
+  backgrounds.forEach(({ key, file }) => {
+    scene.load.image(key, `${BG_PATH}${file}`);
   });
 }
