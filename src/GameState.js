@@ -112,6 +112,18 @@ export const GameState = {
     "patamon",
   ]),
 
+  // High score tracking
+  highScore: 0,
+
+  // Session statistics (reset on each game start)
+  session: {
+    score: 0,
+    coins: 0,
+    gems: 0,
+    eggs: 0,
+    distance: 0,
+  },
+
   audio: {
     musicEnabled: true,
     sfxEnabled: true,
@@ -206,5 +218,15 @@ export const GameState = {
     },
   },
 };
+
+// Load high score from localStorage on startup
+try {
+  const savedHighScore = localStorage.getItem("highScore");
+  if (savedHighScore !== null) {
+    GameState.highScore = parseInt(savedHighScore, 10);
+  }
+} catch (e) {
+  // Ignore localStorage errors
+}
 
 GameState.hatchery.load();
