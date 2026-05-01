@@ -1,24 +1,28 @@
 import { GameState } from "../GameState.js";
+import {
+  createBitmapLabel,
+  createButton,
+  createPanel,
+  setBitmapLabelText,
+  SMALL_FONT_SIZE,
+} from "../ui/PixelUI.js";
 
 const EGG_OFFERS = [
   {
     rarity: "common",
-    title: "Common Egg",
-    color: 0x8fd18f,
+    title: "common-egg",
     frameRange: [0, 24],
     cost: { coins: 40 },
   },
   {
     rarity: "rare",
-    title: "Rare Egg",
-    color: 0x67b7ff,
+    title: "rare-egg",
     frameRange: [25, 39],
     cost: { coins: 120, gems: 3 },
   },
   {
     rarity: "epic",
-    title: "Epic Egg",
-    color: 0xd78cff,
+    title: "epic-egg",
     frameRange: [40, 49],
     cost: { gems: 12 },
   },
@@ -37,34 +41,33 @@ export class ShopScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
 
     this.offers = this.rollEggOffers();
+    this.detailLabels = [];
 
     this.add.rectangle(width / 2, height / 2, width, height, 0x08111f);
-    this.add
-      .text(width / 2, 46, "SHOP", {
-        fontSize: "34px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
-
-    this.currencyText = this.add
-      .text(width / 2, 86, "", {
-        fontSize: "16px",
-        color: "#ffdcaa",
-      })
-      .setOrigin(0.5);
-
-    this.messageText = this.add
-      .text(width / 2, height - 74, "", {
-        fontSize: "16px",
-        color: "#ffffff",
-        align: "center",
-      })
-      .setOrigin(0.5);
-
+    this.createHeader(width);
     this.createEggShelf();
-    this.createUtilityShelf();
-    this.createNavigation();
+    this.createUpgradeShelf();
+    this.createNavigation(width, height);
     this.refreshCurrency();
+  }
+
+  createHeader(width) {
+    createPanel(this, width / 2, 62, 620, 92, { depth: 4, alpha: 0.96 });
+    createBitmapLabel(this, width / 2, 58, "SHOP", {
+      font: "bigFont",
+      size: 50,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
+
+    this.currencyText = createBitmapLabel(this, width / 2, 118, "", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
+
+    this.messageText = createBitmapLabel(this, width / 2, 492, "", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
   }
 
   rollEggOffers() {
@@ -82,148 +85,109 @@ export class ShopScene extends Phaser.Scene {
 
     this.offers.forEach((offer, index) => {
       const x = startX + index * (cardWidth + gap);
-      this.createEggCard(x, 235, cardWidth, offer);
+      this.createEggCard(x, 262, cardWidth, offer);
     });
   }
 
   createEggCard(x, y, width, offer) {
-    const card = this.add
-      .rectangle(x, y, width, 250, 0x101a2d, 0.96)
-      .setStrokeStyle(3, offer.color);
+    createPanel(this, x, y, width, 250, { depth: 4, alpha: 0.96 });
+
+    createBitmapLabel(this, x, y - 94, offer.title, {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
     this.add
-      .text(x, y - 100, offer.title.toUpperCase(), {
-        fontSize: "18px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .sprite(x, y - 28, "collectible-eggs")
+      .sprite(x, y - 26, "collectible-eggs")
       .setFrame(offer.frameIndex)
-      .setScale(1.28);
+      .setScale(1.25)
+      .setDepth(6);
 
-    this.add
-      .text(x, y + 42, `${offer.rarity} rarity`, {
-        fontSize: "14px",
-        color: this.colorToHex(offer.color),
-      })
-      .setOrigin(0.5);
+    createBitmapLabel(this, x, y + 44, offer.rarity, {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
-    this.add
-      .text(x, y + 72, this.formatCost(offer.cost), {
-        fontSize: "15px",
-        color: "#ffdcaa",
-      })
-      .setOrigin(0.5);
+    createBitmapLabel(this, x, y + 76, this.formatCost(offer.cost), {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
-    this.createButton(x, y + 108, 136, 34, "BUY", () => {
-      this.buyEgg(offer);
+    createButton(this, x, y + 112, 126, 38, "buy", () => this.buyEgg(offer), {
+      depth: 7,
     });
-
-    return card;
   }
 
-  createUtilityShelf() {
-    this.add
-      .text(480, 388, "UPGRADES", {
-        fontSize: "20px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+  createUpgradeShelf() {
+    createBitmapLabel(this, 480, 404, "upgrades", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
-    this.createUtilityCard(
-      300,
+    this.createUpgradeCard(
+      288,
       445,
-      "Hatchery Space",
+      "slots",
       () =>
-        `Slots ${GameState.hatchery.capacity}/${MAX_HATCHERY_CAPACITY} - ${this.formatCost(
+        `${GameState.hatchery.capacity}/${MAX_HATCHERY_CAPACITY}:${this.formatCost(
           this.getHatcherySpaceCost(),
         )}`,
       () => this.buyHatcherySpace(),
     );
 
-    this.createUtilityCard(
-      660,
+    this.createUpgradeCard(
+      672,
       445,
-      "Buy Gems",
-      () => `${GEM_PACK.coins} coins -> ${GEM_PACK.gems} gems`,
+      "gems",
+      () => `${GEM_PACK.coins}coins=${GEM_PACK.gems}gems`,
       () => this.buyGemsWithCoins(),
     );
   }
 
-  createUtilityCard(x, y, title, detailFactory, onBuy) {
-    this.add
-      .rectangle(x, y, 300, 74, 0x101a2d, 0.96)
-      .setStrokeStyle(2, 0x334763);
-    this.add
-      .text(x - 128, y - 16, title, {
-        fontSize: "16px",
-        color: "#ffffff",
-      })
-      .setOrigin(0, 0.5);
+  createUpgradeCard(x, y, title, detailFactory, onBuy) {
+    createPanel(this, x, y, 310, 78, { depth: 4, alpha: 0.96 });
 
-    const detailText = this.add
-      .text(x - 128, y + 13, detailFactory(), {
-        fontSize: "13px",
-        color: "#b6c5d8",
-      })
-      .setOrigin(0, 0.5);
+    createBitmapLabel(this, x - 92, y - 14, title, {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(6);
 
-    this.createButton(x + 96, y, 82, 34, "BUY", () => {
+    const detail = createBitmapLabel(this, x - 92, y + 17, detailFactory(), {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(6);
+    this.detailLabels.push({ detail, detailFactory });
+
+    createButton(this, x + 104, y, 82, 36, "buy", () => {
       onBuy();
-      detailText.setText(detailFactory());
+      this.refreshUpgradeDetails();
+    }, {
+      depth: 7,
     });
   }
 
-  createNavigation() {
-    this.createButton(140, 510, 150, 38, "MAIN MENU", () =>
+  createNavigation(width, height) {
+    createButton(this, 150, height - 34, 210, 42, "menu", () =>
       this.scene.start("MainMenuScene"),
     );
-    this.createButton(480, 510, 150, 38, "HATCHERY", () =>
+    createButton(this, width / 2, height - 34, 210, 42, "hatchery", () =>
       this.scene.start("HatcheryScene"),
     );
-    this.createButton(820, 510, 150, 38, "REROLL", () => {
-      this.scene.restart();
-    });
-  }
-
-  createButton(x, y, width, height, label, onClick) {
-    const bg = this.add
-      .rectangle(x, y, width, height, 0xffdcaa)
-      .setStrokeStyle(2, 0x4b3422)
-      .setInteractive({ useHandCursor: true });
-    const text = this.add
-      .text(x, y, label, {
-        fontSize: "14px",
-        color: "#16110b",
-      })
-      .setOrigin(0.5);
-
-    bg.on("pointerover", () => {
-      bg.setFillStyle(0xffefc8);
-      text.setScale(1.04);
-    });
-    bg.on("pointerout", () => {
-      bg.setFillStyle(0xffdcaa);
-      text.setScale(1);
-    });
-    bg.on("pointerdown", onClick);
-    text.setInteractive({ useHandCursor: true }).on("pointerdown", onClick);
-    return bg;
+    createButton(this, 810, height - 34, 210, 42, "reroll", () =>
+      this.scene.restart(),
+    );
   }
 
   buyEgg(offer) {
     if (GameState.hatchery.eggs.length >= GameState.hatchery.capacity) {
-      this.showMessage(
-        "Hatchery is full. Please hatch an egg, discard one, or buy more hatchery space.",
-        "#ff7777",
-      );
+      this.showMessage("hatchery-full", 0xff7777);
       return;
     }
 
     if (!GameState.currency.spend(offer.cost)) {
-      this.showMessage(`Not enough currency. Need ${this.formatCost(offer.cost)}.`, "#ff7777");
+      this.showMessage("not-enough", 0xff7777);
       return;
     }
 
@@ -233,36 +197,53 @@ export class ShopScene extends Phaser.Scene {
       purchasedAt: Date.now(),
     });
     this.refreshCurrency();
-    this.showMessage(`${offer.title} sent to the hatchery.`, "#9dffb2");
+    this.showMessage("sent-to-hatchery", 0x9dffb2);
   }
 
   buyHatcherySpace() {
     if (GameState.hatchery.capacity >= MAX_HATCHERY_CAPACITY) {
-      this.showMessage("Hatchery space is already maxed out.", "#ffdcaa");
+      this.showMessage("slots-max", 0xf7ffe8);
       return;
     }
 
     const cost = this.getHatcherySpaceCost();
     if (!GameState.currency.spend(cost)) {
-      this.showMessage(`Not enough currency. Need ${this.formatCost(cost)}.`, "#ff7777");
+      this.showMessage("not-enough", 0xff7777);
       return;
     }
 
     GameState.hatchery.increaseCapacity(1);
     this.refreshCurrency();
-    this.showMessage("Hatchery space increased.", "#9dffb2");
+    this.showMessage("slots-added", 0x9dffb2);
   }
 
   buyGemsWithCoins() {
-    const cost = { coins: GEM_PACK.coins };
-    if (!GameState.currency.spend(cost)) {
-      this.showMessage(`Not enough coins. Need ${GEM_PACK.coins} coins.`, "#ff7777");
+    if (!GameState.currency.spend({ coins: GEM_PACK.coins })) {
+      this.showMessage("not-enough", 0xff7777);
       return;
     }
 
     GameState.currency.addGems(GEM_PACK.gems);
     this.refreshCurrency();
-    this.showMessage(`Bought ${GEM_PACK.gems} gems.`, "#9dffb2");
+    this.showMessage("gems-added", 0x9dffb2);
+  }
+
+  refreshCurrency() {
+    setBitmapLabelText(
+      this.currencyText,
+      `coins:${GameState.currency.coins}-gems:${GameState.currency.gems}-eggs:${GameState.hatchery.eggs.length}/${GameState.hatchery.capacity}`,
+    );
+  }
+
+  refreshUpgradeDetails() {
+    this.detailLabels.forEach(({ detail, detailFactory }) => {
+      setBitmapLabelText(detail, detailFactory());
+    });
+  }
+
+  showMessage(text, tint = 0xf7ffe8) {
+    this.messageText.setTint(tint);
+    setBitmapLabelText(this.messageText, text);
   }
 
   getHatcherySpaceCost() {
@@ -273,25 +254,10 @@ export class ShopScene extends Phaser.Scene {
     };
   }
 
-  refreshCurrency() {
-    this.currencyText.setText(
-      `Coins: ${GameState.currency.coins}     Gems: ${GameState.currency.gems}     Hatchery: ${GameState.hatchery.eggs.length}/${GameState.hatchery.capacity}`,
-    );
-  }
-
-  showMessage(text, color = "#ffffff") {
-    this.messageText.setColor(color);
-    this.messageText.setText(text);
-  }
-
   formatCost(cost = {}) {
     const parts = [];
-    if (cost.coins) parts.push(`${cost.coins} coins`);
-    if (cost.gems) parts.push(`${cost.gems} gems`);
-    return parts.join(" + ") || "free";
-  }
-
-  colorToHex(color) {
-    return `#${color.toString(16).padStart(6, "0")}`;
+    if (cost.coins) parts.push(`${cost.coins}coins`);
+    if (cost.gems) parts.push(`${cost.gems}gems`);
+    return parts.join("+") || "free";
   }
 }

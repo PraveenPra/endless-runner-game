@@ -1,5 +1,6 @@
 const PANEL_SLICE = 32;
 const BUTTON_SLICE = 14;
+export const SMALL_FONT_SIZE = 50;
 
 export function createPanel(scene, x, y, width, height, options = {}) {
   return createNineSlice(scene, x, y, width, height, {
@@ -22,7 +23,7 @@ export function createButton(scene, x, y, width, height, label, onClick, options
 
   const text = createBitmapLabel(scene, 0, 1, label, {
     font: options.font || "smallFont",
-    size: options.fontSize || 20,
+    size: options.fontSize || SMALL_FONT_SIZE,
     tint: options.tint ?? 0x17301b,
   });
   container.add(text);
@@ -69,7 +70,7 @@ export function createBitmapLabel(scene, x, y, text, options = {}) {
   const font = options.font || "smallFont";
   const displayText = options.textTransform
     ? options.textTransform(text)
-    : normalizeBitmapText(text, font);
+    : formatBitmapText(text, font);
   const label = scene.add.bitmapText(
     x,
     y,
@@ -91,12 +92,19 @@ export function createBitmapLabel(scene, x, y, text, options = {}) {
   return label;
 }
 
-function normalizeBitmapText(text, font) {
+export function setBitmapLabelText(label, text, font = "smallFont") {
+  label.setText(formatBitmapText(text, font));
+  return label;
+}
+
+export function formatBitmapText(text, font = "smallFont") {
   if (font !== "smallFont") return text;
 
   return String(text)
     .toLowerCase()
-    .replace(/\s+/g, "-");
+    .replace(/\s+/g, "-")
+    .replace(/>/g, "")
+    .replace(/_/g, "-");
 }
 
 function createNineSlice(scene, x, y, width, height, config) {
@@ -105,6 +113,7 @@ function createNineSlice(scene, x, y, width, height, config) {
   container.setDepth(depth);
   container.setAlpha(alpha);
 
+  const overlap = config.overlap ?? 2;
   const innerWidth = Math.max(1, width - slice * 2);
   const innerHeight = Math.max(1, height - slice * 2);
   const left = -width / 2;
@@ -113,22 +122,28 @@ function createNineSlice(scene, x, y, width, height, config) {
   const bottom = height / 2 - slice;
 
   const pieces = [
-    [left, top, `${prefix}-top-left`, slice, slice],
-    [left + slice, top, `${prefix}-top`, innerWidth, slice],
-    [right, top, `${prefix}-top-right`, slice, slice],
-    [left, top + slice, `${prefix}-left`, slice, innerHeight],
-    [left + slice, top + slice, `${prefix}-center`, innerWidth, innerHeight],
-    [right, top + slice, `${prefix}-right`, slice, innerHeight],
-    [left, bottom, `${prefix}-bottom-left`, slice, slice],
-    [left + slice, bottom, `${prefix}-bottom`, innerWidth, slice],
-    [right, bottom, `${prefix}-bottom-right`, slice, slice],
+    [left, top, `${prefix}-top-left`, slice + overlap, slice + overlap],
+    [left + slice - overlap, top, `${prefix}-top`, innerWidth + overlap * 2, slice + overlap],
+    [right - overlap, top, `${prefix}-top-right`, slice + overlap, slice + overlap],
+    [left, top + slice - overlap, `${prefix}-left`, slice + overlap, innerHeight + overlap * 2],
+    [
+      left + slice - overlap,
+      top + slice - overlap,
+      `${prefix}-center`,
+      innerWidth + overlap * 2,
+      innerHeight + overlap * 2,
+    ],
+    [right - overlap, top + slice - overlap, `${prefix}-right`, slice + overlap, innerHeight + overlap * 2],
+    [left, bottom - overlap, `${prefix}-bottom-left`, slice + overlap, slice + overlap],
+    [left + slice - overlap, bottom - overlap, `${prefix}-bottom`, innerWidth + overlap * 2, slice + overlap],
+    [right - overlap, bottom - overlap, `${prefix}-bottom-right`, slice + overlap, slice + overlap],
   ];
 
   pieces.forEach(([pieceX, pieceY, frame, pieceWidth, pieceHeight]) => {
     const image = scene.add
-      .image(pieceX, pieceY, atlas, frame)
+      .image(Math.round(pieceX), Math.round(pieceY), atlas, frame)
       .setOrigin(0, 0)
-      .setDisplaySize(pieceWidth, pieceHeight);
+      .setDisplaySize(Math.ceil(pieceWidth), Math.ceil(pieceHeight));
     container.add(image);
   });
 

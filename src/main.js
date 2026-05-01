@@ -21,7 +21,7 @@ const config = {
   pixelArt: true,
   physics: {
     default: "arcade",
-    arcade: { gravity: { y: 1200 }, debug: true },
+    arcade: { gravity: { y: 1200 }, debug: false },
   },
   scene: [
     Preload,

@@ -1,5 +1,12 @@
 import { GameState } from "../GameState.js";
 import { createAnimations } from "../systems/AnimationFactory.js";
+import {
+  createBitmapLabel,
+  createButton,
+  createPanel,
+  setBitmapLabelText,
+  SMALL_FONT_SIZE,
+} from "../ui/PixelUI.js";
 
 export class HatcheryScene extends Phaser.Scene {
   constructor() {
@@ -9,138 +16,148 @@ export class HatcheryScene extends Phaser.Scene {
   create() {
     const { width, height } = this.cameras.main;
 
-    this.slotSprites = [];
-    this.slotLabels = [];
-    this.discardButtons = [];
+    this.dynamicItems = [];
+    this.add.rectangle(width / 2, height / 2, width, height, 0x08111f);
+    this.createHeader(width);
+    this.createResult(width);
+    this.createNavigation(width, height);
+    this.refreshEggs();
+  }
 
-    this.add
-      .text(width / 2, 64, "HATCHERY", {
-        fontSize: "34px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+  createHeader(width) {
+    createPanel(this, width / 2, 66, 560, 96, { depth: 4, alpha: 0.96 });
+    createBitmapLabel(this, width / 2, 62, "HATCHERY", {
+      font: "bigFont",
+      size: 48,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
-    this.messageText = this.add
-      .text(width / 2, 280, "", {
-        fontSize: "18px",
-        color: "#ffdcaa",
-        align: "center",
-      })
-      .setOrigin(0.5);
+    this.messageText = createBitmapLabel(this, width / 2, 126, "", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
+  }
 
-    this.resultSprite = this.add.sprite(width / 2, 365, "agumon").setVisible(false);
-    this.resultNameText = this.add
-      .text(width / 2, 455, "", {
-        fontSize: "22px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5)
+  createResult(width) {
+    this.resultSprite = this.add
+      .sprite(width / 2, 392, "agumon")
+      .setDepth(7)
       .setVisible(false);
 
-    this.hatchButton = this.createButton(width / 2, 510, "HATCH FIRST EGG", () =>
-      this.hatchEgg(),
+    this.resultNameText = createBitmapLabel(this, width / 2, 466, "", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    })
+      .setDepth(7)
+      .setVisible(false);
+  }
+
+  createNavigation(width, height) {
+    this.hatchButton = createButton(
+      this,
+      width / 2,
+      height - 82,
+      270,
+      48,
+      "hatch",
+      () => this.hatchEgg(),
+      { depth: 8 },
     );
-    this.createButton(220, 510, "MAIN MENU", () =>
+
+    createButton(this, 160, height - 34, 210, 42, "menu", () =>
       this.scene.start("MainMenuScene"),
     );
-    this.createButton(740, 510, "CHARACTER SELECT", () =>
-      this.scene.start("CharacterSelect"),
-    );
-    this.createButton(width / 2, 470, "SHOP", () =>
+    createButton(this, width / 2, height - 34, 210, 42, "shop", () =>
       this.scene.start("ShopScene"),
     );
-
-    this.refreshEgg();
+    createButton(this, 800, height - 34, 210, 42, "character", () =>
+      this.scene.start("CharacterSelect"),
+    );
   }
 
-  createButton(x, y, label, onClick) {
-    const button = this.add
-      .text(x, y, label, {
-        fontSize: "18px",
-        color: "#000000",
-        backgroundColor: "#ffdcaa",
-        padding: { x: 15, y: 8 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    button.on("pointerover", () => button.setScale(1.08));
-    button.on("pointerout", () => button.setScale(1));
-    button.on("pointerdown", onClick);
-    return button;
-  }
-
-  refreshEgg() {
+  refreshEggs() {
     const eggs = GameState.hatchery.eggs;
-
+    this.clearDynamicItems();
     this.resultSprite.setVisible(false);
     this.resultNameText.setVisible(false);
-    this.slotSprites.forEach((slot) => slot.destroy());
-    this.slotLabels.forEach((label) => label.destroy());
-    this.discardButtons.forEach((button) => button.destroy());
-    this.slotSprites = [];
-    this.slotLabels = [];
-    this.discardButtons = [];
 
-    const startX = this.cameras.main.centerX - (GameState.hatchery.capacity - 1) * 72;
-    for (let i = 0; i < GameState.hatchery.capacity; i += 1) {
-      const x = startX + i * 144;
-      const egg = eggs[i];
-
-      const slot = this.add
-        .rectangle(x, 185, 96, 110, 0x111a2e, 0.9)
-        .setStrokeStyle(2, egg ? 0xffdcaa : 0x516178);
-      this.slotSprites.push(slot);
-
-      const label = this.add
-        .text(x, 248, egg ? egg.rarity || "egg" : "empty", {
-          fontSize: "13px",
-          color: egg ? "#ffdcaa" : "#7d8ca3",
-        })
-        .setOrigin(0.5);
-      this.slotLabels.push(label);
-
-      if (egg) {
-        const eggSprite = this.add
-          .sprite(x, 181, "collectible-eggs")
-          .setFrame(egg.frameIndex || 0)
-          .setScale(1.15);
-        this.slotSprites.push(eggSprite);
-
-        const discard = this.createButton(x, 300, "DISCARD", () => {
-          GameState.hatchery.discardEgg(i);
-          this.refreshEgg();
-        });
-        discard.setFontSize("13px");
-        this.discardButtons.push(discard);
-      }
-    }
+    this.createSlots(eggs);
 
     if (!eggs.length) {
       this.hatchButton.setAlpha(0.35);
-      this.messageText.setText("No egg waiting. Bring one back from a run or buy one in the shop.");
+      setBitmapLabelText(this.messageText, "no-eggs");
       return;
     }
 
     this.hatchButton.setAlpha(1);
-    this.messageText.setText(`${eggs.length}/${GameState.hatchery.capacity} hatchery slots filled.`);
+    setBitmapLabelText(
+      this.messageText,
+      `slots:${eggs.length}/${GameState.hatchery.capacity}`,
+    );
+  }
+
+  createSlots(eggs) {
+    const capacity = GameState.hatchery.capacity;
+    const spacing = Math.min(148, 680 / Math.max(1, capacity));
+    const startX = this.cameras.main.centerX - ((capacity - 1) * spacing) / 2;
+
+    for (let i = 0; i < capacity; i += 1) {
+      this.createSlot(startX + i * spacing, 242, eggs[i], i);
+    }
+  }
+
+  createSlot(x, y, egg, index) {
+    const panel = createPanel(this, x, y, 118, 142, {
+      depth: 5,
+      alpha: egg ? 0.98 : 0.72,
+    });
+    this.dynamicItems.push(panel);
+
+    const label = createBitmapLabel(this, x, y + 52, egg ? egg.rarity || "egg" : "empty", {
+      size: SMALL_FONT_SIZE,
+      tint: egg ? 0xf7ffe8 : 0x386341,
+    }).setDepth(7);
+    this.dynamicItems.push(label);
+
+    if (!egg) return;
+
+    const eggSprite = this.add
+      .sprite(x, y - 18, "collectible-eggs")
+      .setFrame(egg.frameIndex || 0)
+      .setScale(1.1)
+      .setDepth(7);
+    this.dynamicItems.push(eggSprite);
+
+    const discard = createButton(this, x, y + 94, 112, 34, "discard", () => {
+      GameState.hatchery.discardEgg(index);
+      this.refreshEggs();
+    }, {
+      depth: 8,
+      fontSize: SMALL_FONT_SIZE,
+    });
+    this.dynamicItems.push(discard);
+  }
+
+  clearDynamicItems() {
+    this.dynamicItems.forEach((item) => item.destroy());
+    this.dynamicItems = [];
   }
 
   hatchEgg() {
     if (!GameState.hatchery.pendingEgg) {
-      this.messageText.setText("No egg waiting. Bring one back from a run.");
+      setBitmapLabelText(this.messageText, "no-eggs");
       return;
     }
 
     const digimonKey = GameState.hatchery.hatchPendingEgg();
     if (!digimonKey) {
-      this.refreshEgg();
-      this.messageText.setText("Every Digimon is already unlocked.");
+      this.refreshEggs();
+      setBitmapLabelText(this.messageText, "all-unlocked");
       return;
     }
 
     createAnimations(this, digimonKey);
-    this.refreshEgg();
+    this.refreshEggs();
 
     const idleKey = `${digimonKey}_idle`;
     const flyKey = `${digimonKey}_fly`;
@@ -156,11 +173,10 @@ export class HatcheryScene extends Phaser.Scene {
       .setVisible(true)
       .setScale(1.25)
       .play(animKey, true);
-    this.resultNameText
-      .setText(this.formatName(digimonKey))
-      .setVisible(true);
+    setBitmapLabelText(this.resultNameText, this.formatName(digimonKey));
+    this.resultNameText.setVisible(true);
     this.hatchButton.setAlpha(0.35);
-    this.messageText.setText("Unlocked!");
+    setBitmapLabelText(this.messageText, "unlocked");
 
     this.cameras.main.flash(220, 255, 245, 180);
     this.cameras.main.shake(180, 0.006);
@@ -171,7 +187,7 @@ export class HatcheryScene extends Phaser.Scene {
 
   formatName(key) {
     return key
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      .replace(/^\w/, (char) => char.toUpperCase());
+      .replace(/([a-z])([A-Z])/g, "$1-$2")
+      .toLowerCase();
   }
 }
