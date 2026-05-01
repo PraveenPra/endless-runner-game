@@ -7,7 +7,7 @@ import { loadObstacles } from "./obstacles.js";
 import { loadCollectibles } from "./collectables.js";
 // import { loadTilemaps } from "./tilemaps.js";
 // import { loadItems } from "./items.js";
-// import { loadUI } from "./ui.js";
+import { loadUI } from "./ui.js";
 
 export class Preload extends Phaser.Scene {
   constructor() {
@@ -26,7 +26,7 @@ export class Preload extends Phaser.Scene {
     // loadItems(this);
     // loadTilemaps(this);
     loadAudio(this);
-    // loadUI(this);
+    loadUI(this);
   }
 
   create() {

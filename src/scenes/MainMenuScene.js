@@ -1,4 +1,6 @@
-import { GameState } from "/src/GameState.js";
+import { GameState } from "../GameState.js";
+import { getMapConfig } from "../config/maps.js";
+import { createBitmapLabel, createButton, createPanel } from "../ui/PixelUI.js";
 
 export class MainMenuScene extends Phaser.Scene {
   constructor() {
@@ -7,75 +9,109 @@ export class MainMenuScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
-
-    // Title
-    this.add
-      .text(width / 2, 120, "DIGIMON Endless runner", {
-        fontSize: "48px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
-
-    const startGame = this.add
-      .text(width / 2, 260, "Start Game", {
-        fontSize: "28px",
-        color: "#00ffcc",
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    startGame.on("pointerdown", () => {
-      this.scene.start("MapSelectScene");
-    });
-
-    const characterSelection = this.add
-      .text(width / 2, 320, "Character selection", {
-        fontSize: "28px",
-        color: "#ffcc00",
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    characterSelection.on("pointerdown", () => {
-      this.scene.start("CharacterSelect");
-    });
-
-    const hatchery = this.add
-      .text(width / 2, 380, "Hatchery", {
-        fontSize: "28px",
-        color: "#ffdcaa",
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    hatchery.on("pointerdown", () => {
-      this.scene.start("HatcheryScene");
-    });
-
-    const shop = this.add
-      .text(width / 2, 440, "Shop", {
-        fontSize: "28px",
-        color: "#8fd1ff",
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    shop.on("pointerdown", () => {
-      this.scene.start("ShopScene");
-    });
-
-    // ==========================
-    // HOVER EFFECT
-    // ==========================
-
-    this.addHover(startGame);
-    this.addHover(characterSelection);
-    this.addHover(hatchery);
-    this.addHover(shop);
+    this.createBackdrop(width, height);
+    this.createShell(width, height);
   }
 
-  addHover(btn) {
-    btn.on("pointerover", () => btn.setScale(1.1));
-    btn.on("pointerout", () => btn.setScale(1));
+  createBackdrop(width, height) {
+    const map = getMapConfig(GameState.selectedMapKey);
+    const layers = map.backgrounds?.length
+      ? map.backgrounds
+      : getMapConfig("desert").backgrounds;
+
+    layers.forEach((layer, index) => {
+      if (!this.textures.exists(layer.key)) return;
+
+      const bg = this.add
+        .tileSprite(0, 0, width, height, layer.key)
+        .setOrigin(0)
+        .setDepth(-20 + index)
+        .setAlpha(index === 0 ? 1 : 0.88);
+
+      this.tweens.add({
+        targets: bg,
+        tilePositionX: 48 + index * 18,
+        duration: 12000 + index * 2200,
+        repeat: -1,
+        ease: "Linear",
+      });
+    });
+
+    this.add.rectangle(width / 2, height / 2, width, height, 0x07101b, 0.28);
+  }
+
+  createShell(width, height) {
+    createPanel(this, width / 2, height / 2 + 18, 520, 400, {
+      depth: 5,
+      alpha: 0.96,
+    });
+
+    createPanel(this, width / 2, 92, 620, 108, {
+      depth: 6,
+      alpha: 0.96,
+    });
+
+    createBitmapLabel(this, width / 2, 72, "DIGIMON", {
+      font: "bigFont",
+      size: 50,
+      tint: 0xf7ffe8,
+    }).setDepth(8);
+
+    createBitmapLabel(this, width / 2, 119, "endless-runner", {
+      font: "smallFont",
+      size: 52,
+      tint: 0x244b2a,
+    }).setDepth(8);
+
+    const map = getMapConfig(GameState.selectedMapKey);
+    createBitmapLabel(this, width / 2, 181, `map:${map.name}`, {
+      font: "smallFont",
+      size: 50,
+      tint: 0xf7ffe8,
+    }).setDepth(8);
+
+    const buttons = [
+      ["start-game", () => this.scene.start("MapSelectScene")],
+      ["character", () => this.scene.start("CharacterSelect")],
+      ["hatchery", () => this.scene.start("HatcheryScene")],
+      ["shop", () => this.scene.start("ShopScene")],
+    ];
+
+    buttons.forEach(([label, onClick], index) => {
+      createButton(this, width / 2, 236 + index * 58, 300, 42, label, onClick, {
+        depth: 10,
+        fontSize: 50,
+      });
+    });
+
+    this.createStatusBar(width, height);
+  }
+
+  createStatusBar(width, height) {
+    createPanel(this, width / 2, height - 34, 700, 48, {
+      depth: 6,
+      alpha: 0.94,
+    });
+
+    const stats = [
+      `coins:${GameState.currency.coins}`,
+      `gems:${GameState.currency.gems}`,
+      `eggs:${GameState.hatchery.eggs.length}/${GameState.hatchery.capacity}`,
+      `best:${GameState.highScore}`,
+    ];
+
+    stats.forEach((stat, index) => {
+      createBitmapLabel(
+        this,
+        width / 2 - 255 + index * 170,
+        height - 34,
+        stat,
+        {
+          font: "smallFont",
+          size: 50,
+          tint: 0xf7ffe8,
+        },
+      ).setDepth(8);
+    });
   }
 }
