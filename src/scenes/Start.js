@@ -71,10 +71,10 @@ export class Start extends Phaser.Scene {
     this.nextAttackAt = 0;
     this.pendingAttackEvent = null;
     this.evolutionTimer = null;
-     this.evolutionIntroTimer = null;
-     this.dustTrailTimer = null;
-     this.mapConfig = getMapConfig(GameState.selectedMapKey);
-   }
+    this.evolutionIntroTimer = null;
+    this.dustTrailTimer = null;
+    this.mapConfig = getMapConfig(GameState.selectedMapKey);
+  }
 
   createLayout() {
     const { width, height } = this.cameras.main;
@@ -88,14 +88,31 @@ export class Start extends Phaser.Scene {
 
     this.playerStartX = 100 * this.scaleX;
     this.playerStartY = 100 * this.scaleY;
-    this.groundY = 250 * this.scaleY;
-    this.groundHeight = 25;
-    this.groundScaleY = 1.8;
+    const groundConfig = this.mapConfig.ground || {};
+    this.groundY = this.resolveMapY(groundConfig.y, 250);
+    this.groundHeight = this.resolveMapHeight(groundConfig.height, 25);
+    this.groundScaleY = groundConfig.scaleY ?? 1.8;
     this.gameOverY = 120 * this.scaleY;
     this.restartY = 150 * this.scaleY;
     this.obstacleSpawnX = this.sceneWidth + 40;
 
     this.physics.world.setBounds(0, 0, width, height);
+  }
+
+  resolveMapX(value, fallback = 0) {
+    return (value ?? fallback) * this.scaleX;
+  }
+
+  resolveMapY(value, fallback = 0) {
+    return (value ?? fallback) * this.scaleY;
+  }
+
+  resolveMapWidth(value, fallback = 480) {
+    return (value ?? fallback) * this.scaleX;
+  }
+
+  resolveMapHeight(value, fallback = 270) {
+    return (value ?? fallback) * this.scaleY;
   }
 
   /* ───────────────── CONFIG ───────────────── */
@@ -152,6 +169,12 @@ export class Start extends Phaser.Scene {
       },
       {
         sprite: "obstacle-static-1",
+        anim: null,
+        y: 220 * this.scaleY,
+        hp: 1,
+      },
+      {
+        sprite: "obstacle-static-2",
         anim: null,
         y: 220 * this.scaleY,
         hp: 1,
@@ -362,11 +385,21 @@ export class Start extends Phaser.Scene {
     this.mapConfig.backgrounds.forEach((layer) => {
       if (!this.textures.exists(layer.key)) return;
 
-      const y = (layer.y || 0) * this.scaleY;
-      const height = (layer.height || 270) * this.scaleY;
+      const x = this.resolveMapX(layer.x, 0);
+      const y = this.resolveMapY(layer.y, 0);
+      const width = this.resolveMapWidth(layer.width, 480);
+      const height = this.resolveMapHeight(layer.height, 270);
       const sprite = this.add
-        .tileSprite(0, y, this.sceneWidth, height, layer.key)
-        .setOrigin(0, 0);
+        .tileSprite(x, y, width, height, layer.key)
+        .setOrigin(layer.originX ?? 0, layer.originY ?? 0)
+        .setScale(layer.scaleX ?? 1, layer.scaleY ?? 1)
+        .setDepth(layer.depth ?? 0)
+        .setAlpha(layer.alpha ?? 1);
+
+      sprite.tileScaleX = layer.tileScaleX ?? 1;
+      sprite.tileScaleY = layer.tileScaleY ?? 1;
+      sprite.tilePositionX = layer.tilePositionX ?? 0;
+      sprite.tilePositionY = layer.tilePositionY ?? 0;
 
       this.backgroundLayers.push({
         sprite,
@@ -376,19 +409,48 @@ export class Start extends Phaser.Scene {
   }
 
   createGround() {
-    const groundKey = this.mapConfig.ground?.key || "ground";
+    const groundConfig = this.mapConfig.ground || {};
+    const groundKey = groundConfig.key || "ground";
+    const x = this.resolveMapX(groundConfig.x, 240);
+    const y = this.resolveMapY(groundConfig.y, 250);
+    const width = this.resolveMapWidth(groundConfig.width, 480);
+    const height = this.resolveMapHeight(groundConfig.height, 25);
+    const scaleX = groundConfig.scaleX ?? 1;
+    const scaleY = groundConfig.scaleY ?? 1.8;
 
     this.ground = this.add
-      .tileSprite(
-        this.sceneWidth / 2,
-        this.groundY,
-        this.sceneWidth,
-        this.groundHeight,
-        groundKey,
-      )
-      .setScale(1, this.groundScaleY);
+      .tileSprite(x, y, width, height, groundKey)
+      .setOrigin(groundConfig.originX ?? 0.5, groundConfig.originY ?? 0.5)
+      .setScale(scaleX, scaleY)
+      .setDepth(groundConfig.depth ?? 5);
+
+    this.ground.tileScaleX = groundConfig.tileScaleX ?? 1;
+    this.ground.tileScaleY = groundConfig.tileScaleY ?? 1;
+    this.ground.tilePositionX = groundConfig.tilePositionX ?? 0;
+    this.ground.tilePositionY = groundConfig.tilePositionY ?? 0;
+    this.groundScrollSpeed = groundConfig.scrollSpeed ?? 2;
 
     this.physics.add.existing(this.ground, true);
+
+    if (groundConfig.body) {
+      const bodyWidth = this.resolveMapWidth(
+        groundConfig.body.width,
+        width / this.scaleX,
+      );
+      const bodyHeight = this.resolveMapHeight(
+        groundConfig.body.height,
+        height / this.scaleY,
+      );
+      const offsetX = this.resolveMapX(groundConfig.body.offsetX, 0);
+      const offsetY = this.resolveMapY(groundConfig.body.offsetY, 0);
+
+      this.ground.body.setSize(bodyWidth, bodyHeight);
+      this.ground.body.setOffset(offsetX, offsetY);
+    }
+
+    if (this.ground.body.refreshBody) {
+      this.ground.body.refreshBody();
+    }
   }
 
   /* ───────────────── PLAYER ───────────────── */
@@ -1492,7 +1554,7 @@ export class Start extends Phaser.Scene {
     const speedScale = Math.abs(
       this.currentObstacleSpeed / this.baseObstacleSpeed,
     );
-    this.ground.tilePositionX += 2 * speedScale;
+    this.ground.tilePositionX += this.groundScrollSpeed * speedScale;
     this.backgroundLayers.forEach((layer) => {
       layer.sprite.tilePositionX += layer.scrollSpeed * speedScale;
     });

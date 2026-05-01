@@ -12,6 +12,8 @@ export const obstacleSpritesheets = [
 export function loadObstacles(scene) {
   // standalone images
   scene.load.image("obstacle-static-1", `${OBSTACLES_PATH}/static/balota.png`);
+  scene.load.image("obstacle-static-2", `${OBSTACLES_PATH}/static/brick.png`);
+  scene.load.image("obstacle-static-3", `${OBSTACLES_PATH}/static/cactus.png`);
 
   // spritesheets
   obstacleSpritesheets.forEach(({ key, file, w, h }) => {
