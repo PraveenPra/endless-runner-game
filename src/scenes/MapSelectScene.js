@@ -1,5 +1,11 @@
 import { GameState } from "../GameState.js";
 import { getMapList } from "../config/maps.js";
+import {
+  createBitmapLabel,
+  createButton,
+  createPanel,
+  SMALL_FONT_SIZE,
+} from "../ui/PixelUI.js";
 
 export class MapSelectScene extends Phaser.Scene {
   constructor() {
@@ -7,89 +13,108 @@ export class MapSelectScene extends Phaser.Scene {
   }
 
   create() {
-    const { width } = this.cameras.main;
+    const { width, height } = this.cameras.main;
     const maps = getMapList();
 
-    this.add.rectangle(480, 272, 960, 544, 0x08111f);
-    this.add
-      .text(width / 2, 58, "SELECT MAP", {
-        fontSize: "34px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+    this.add.rectangle(width / 2, height / 2, width, height, 0x08111f);
+    this.createHeader(width);
+    this.createMapGrid(maps);
+    this.createNavigation(height);
+  }
+
+  createHeader(width) {
+    createPanel(this, width / 2, 62, 580, 92, { depth: 4, alpha: 0.96 });
+    createBitmapLabel(this, width / 2, 58, "MAPS", {
+      font: "bigFont",
+      size: 50,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
+
+    createBitmapLabel(this, width / 2, 118, "choose-your-run", {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
+  }
+
+  createMapGrid(maps) {
+    const columns = Math.min(4, maps.length);
+    const cardWidth = 206;
+    const cardHeight = 292;
+    const gap = 22;
+    const startX = this.cameras.main.centerX - ((columns - 1) * (cardWidth + gap)) / 2;
 
     maps.forEach((map, index) => {
-      const x = width / 2 - (maps.length - 1) * 150 + index * 300;
-      this.createMapCard(x, 260, map);
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      const x = startX + col * (cardWidth + gap);
+      const y = 286 + row * 318;
+      this.createMapCard(x, y, cardWidth, cardHeight, map);
     });
-
-    this.createButton(160, 510, 160, 38, "MAIN MENU", () =>
-      this.scene.start("MainMenuScene"),
-    );
   }
 
-  createMapCard(x, y, map) {
+  createMapCard(x, y, width, height, map) {
     const selected = GameState.selectedMapKey === map.key;
-    const borderColor = selected ? 0xffdcaa : 0x38516f;
-
-    this.add
-      .rectangle(x, y, 240, 260, 0x101a2d, 0.96)
-      .setStrokeStyle(3, borderColor);
-
-    const previewLayers = map.backgrounds.slice(0, 5);
-    previewLayers.forEach((layer, index) => {
-      const preview = this.add
-        .image(x, y - 44 + index * 8, layer.key)
-        .setDisplaySize(210, 116)
-        .setOrigin(0.5);
-      preview.setAlpha(0.9);
+    createPanel(this, x, y, width, height, {
+      depth: 4,
+      alpha: selected ? 1 : 0.88,
     });
 
-    this.add
-      .tileSprite(x, y + 28, 210, 16, map.ground.key)
-      .setScale(1, 1.2);
+    if (selected) {
+      this.add
+        .rectangle(x, y, width + 8, height + 8)
+        .setStrokeStyle(3, 0xf7ffe8)
+        .setDepth(5);
+    }
 
-    this.add
-      .text(x, y + 82, map.name.toUpperCase(), {
-        fontSize: "20px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+    this.createMapPreview(x, y - 56, width - 32, 118, map);
 
-    this.add
-      .text(x, y + 112, selected ? "Selected" : "Ready", {
-        fontSize: "13px",
-        color: selected ? "#ffdcaa" : "#9ab0ca",
-      })
-      .setOrigin(0.5);
+    createBitmapLabel(this, x, y + 54, map.name, {
+      size: SMALL_FONT_SIZE,
+      tint: 0xf7ffe8,
+    }).setDepth(7);
 
-    this.createButton(x, y + 146, 150, 34, "PLAY HERE", () => {
+    createBitmapLabel(this, x, y + 88, selected ? "selected" : "ready", {
+      size: SMALL_FONT_SIZE,
+      tint: selected ? 0xf7ffe8 : 0x386341,
+    }).setDepth(7);
+
+    createButton(this, x, y + 126, 150, 42, "play", () => {
       GameState.selectedMapKey = map.key;
       this.scene.start("CharacterSelect");
+    }, {
+      depth: 8,
     });
   }
 
-  createButton(x, y, width, height, label, onClick) {
-    const bg = this.add
-      .rectangle(x, y, width, height, 0xffdcaa)
-      .setStrokeStyle(2, 0x4b3422)
-      .setInteractive({ useHandCursor: true });
-    const text = this.add
-      .text(x, y, label, {
-        fontSize: "14px",
-        color: "#16110b",
-      })
-      .setOrigin(0.5);
+  createMapPreview(x, y, width, height, map) {
+    const maskShape = this.add
+      .rectangle(x, y, width, height, 0xffffff)
+      .setVisible(false);
+    const mask = maskShape.createGeometryMask();
 
-    bg.on("pointerover", () => {
-      bg.setFillStyle(0xffefc8);
-      text.setScale(1.04);
+    map.backgrounds.slice(0, 5).forEach((layer, index) => {
+      if (!this.textures.exists(layer.key)) return;
+
+      const preview = this.add
+        .tileSprite(x, y, width, height, layer.key)
+        .setDepth(6 + index * 0.01)
+        .setAlpha(index === 0 ? 1 : 0.82)
+        .setMask(mask);
+
+      preview.tilePositionX = index * 18;
     });
-    bg.on("pointerout", () => {
-      bg.setFillStyle(0xffdcaa);
-      text.setScale(1);
-    });
-    bg.on("pointerdown", onClick);
-    text.setInteractive({ useHandCursor: true }).on("pointerdown", onClick);
+
+    if (this.textures.exists(map.ground.key)) {
+      this.add
+        .tileSprite(x, y + height / 2 - 12, width, 24, map.ground.key)
+        .setDepth(7)
+        .setMask(mask);
+    }
+  }
+
+  createNavigation(height) {
+    createButton(this, 150, height - 34, 210, 42, "menu", () =>
+      this.scene.start("MainMenuScene"),
+    );
   }
 }

@@ -109,11 +109,11 @@ export function formatBitmapText(text, font = "smallFont") {
 
 function createNineSlice(scene, x, y, width, height, config) {
   const { atlas, prefix, slice, depth, alpha } = config;
-  const container = scene.add.container(x, y);
+  const container = scene.add.container(Math.round(x), Math.round(y));
   container.setDepth(depth);
   container.setAlpha(alpha);
 
-  const overlap = config.overlap ?? 2;
+  const overlap = config.overlap ?? 4;
   const innerWidth = Math.max(1, width - slice * 2);
   const innerHeight = Math.max(1, height - slice * 2);
   const left = -width / 2;
