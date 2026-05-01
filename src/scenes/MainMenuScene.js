@@ -10,17 +10,13 @@ export class MainMenuScene extends Phaser.Scene {
 
     // Title
     this.add
-      .text(width / 2, 120, "DIGIMON BATTLE", {
+      .text(width / 2, 120, "DIGIMON Endless runner", {
         fontSize: "48px",
         color: "#ffffff",
       })
       .setOrigin(0.5);
 
-    // ==========================
-    // PLATFORMER MODE BUTTON
-    // ==========================
-
-    const platformer = this.add
+    const startGame = this.add
       .text(width / 2, 260, "Start Game", {
         fontSize: "28px",
         color: "#00ffcc",
@@ -28,15 +24,11 @@ export class MainMenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
-    platformer.on("pointerdown", () => {
+    startGame.on("pointerdown", () => {
       this.scene.start("CharacterSelect");
     });
 
-    // ==========================
-    // SURVIVAL MODE BUTTON
-    // ==========================
-
-    const survival = this.add
+    const characterSelection = this.add
       .text(width / 2, 320, "Character selection", {
         fontSize: "28px",
         color: "#ffcc00",
@@ -44,7 +36,7 @@ export class MainMenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
-    survival.on("pointerdown", () => {
+    characterSelection.on("pointerdown", () => {
       this.scene.start("CharacterSelect");
     });
 
@@ -76,8 +68,8 @@ export class MainMenuScene extends Phaser.Scene {
     // HOVER EFFECT
     // ==========================
 
-    this.addHover(platformer);
-    this.addHover(survival);
+    this.addHover(startGame);
+    this.addHover(characterSelection);
     this.addHover(hatchery);
     this.addHover(shop);
   }
