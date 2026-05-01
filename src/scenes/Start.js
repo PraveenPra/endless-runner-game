@@ -92,6 +92,7 @@ export class Start extends Phaser.Scene {
     this.groundY = this.resolveMapY(groundConfig.y, 250);
     this.groundHeight = this.resolveMapHeight(groundConfig.height, 25);
     this.groundScaleY = groundConfig.scaleY ?? 1.8;
+    this.groundTopY = this.getConfiguredGroundTopY(groundConfig);
     this.gameOverY = 120 * this.scaleY;
     this.restartY = 150 * this.scaleY;
     this.obstacleSpawnX = this.sceneWidth + 40;
@@ -113,6 +114,21 @@ export class Start extends Phaser.Scene {
 
   resolveMapHeight(value, fallback = 270) {
     return (value ?? fallback) * this.scaleY;
+  }
+
+  getConfiguredGroundTopY(groundConfig = this.mapConfig.ground || {}) {
+    if (groundConfig.body) {
+      return (
+        this.resolveMapY(groundConfig.y, 250) +
+        this.resolveMapY(groundConfig.body.offsetY, 0)
+      );
+    }
+
+    const y = this.resolveMapY(groundConfig.y, 250);
+    const height = this.resolveMapHeight(groundConfig.height, 25);
+    const scaleY = groundConfig.scaleY ?? 1.8;
+    const originY = groundConfig.originY ?? 0.5;
+    return y - height * scaleY * originY;
   }
 
   /* ───────────────── CONFIG ───────────────── */
@@ -278,15 +294,16 @@ export class Start extends Phaser.Scene {
       },
     ];
 
+    const groundTop = this.groundTopY;
     this.collectibleLanes = [
-      this.groundY - 30 * this.scaleY,
-      this.groundY - 80 * this.scaleY,
-      this.groundY - 130 * this.scaleY,
+      groundTop - 34 * this.scaleY,
+      groundTop - 72 * this.scaleY,
+      groundTop - 108 * this.scaleY,
     ];
 
     this.eggLanes = [
-      this.groundY - 18 * this.scaleY,
-      this.groundY - 55 * this.scaleY,
+      groundTop - 28 * this.scaleY,
+      groundTop - 62 * this.scaleY,
     ];
   }
 
@@ -663,6 +680,8 @@ export class Start extends Phaser.Scene {
       collectible.play(type.anim);
     }
 
+    this.placeCollectibleAboveGround(collectible);
+
     collectible.body.setSize(
       collectible.width * 0.55,
       collectible.height * 0.55,
@@ -684,6 +703,16 @@ export class Start extends Phaser.Scene {
     }
 
     return collectible;
+  }
+
+  placeCollectibleAboveGround(collectible) {
+    const groundTop = this.getGroundTopY();
+    const clearance = 6 * this.scaleY;
+    const maxY = groundTop - collectible.displayHeight * 0.5 - clearance;
+
+    if (collectible.y > maxY) {
+      collectible.y = maxY;
+    }
   }
 
   /* ───────────────── UI ───────────────── */
@@ -1260,27 +1289,46 @@ export class Start extends Phaser.Scene {
 
   updateMagnetAttraction() {
     const magnetRange = 150 * this.scaleX;
+    const target = this.getPlayerMagnetTarget();
+
     this.collectibles.children.iterate((coin) => {
       if (!coin || !coin.active) return;
       if (coin.collectibleType && coin.collectibleType.kind === "coin") {
         const dist = Phaser.Math.Distance.Between(
-          this.player.x,
-          this.player.y,
+          target.x,
+          target.y,
           coin.x,
           coin.y,
         );
         if (dist < magnetRange) {
+          if (dist < 18 * this.scaleX) {
+            this.collectCollectible(coin);
+            return;
+          }
+
           const angle = Phaser.Math.Angle.Between(
             coin.x,
             coin.y,
-            this.player.x,
-            this.player.y,
+            target.x,
+            target.y,
           );
-          const speed = 300 + (magnetRange - dist) * 2;
+          const speed = 420 + (magnetRange - dist) * 3;
+          this.tweens.killTweensOf(coin);
           coin.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
         }
       }
     });
+  }
+
+  getPlayerMagnetTarget() {
+    if (!this.player?.body) {
+      return { x: this.player.x, y: this.player.y };
+    }
+
+    return {
+      x: this.player.body.center.x,
+      y: this.player.body.center.y,
+    };
   }
 
   handleObstacleHit(obstacle) {
