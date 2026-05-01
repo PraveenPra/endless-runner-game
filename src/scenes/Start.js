@@ -120,66 +120,79 @@ export class Start extends Phaser.Scene {
   createObstacleConfig() {
     this.obstacleTypes = [
       {
+        id: "bala",
         sprite: "obstacle-moving-1",
         anim: "obstacle-moving-1-anim",
         frames: { start: 0, end: 2 },
         frameRate: 3,
-        y: 220 * this.scaleY,
         hp: 1,
       },
       {
+        id: "bomba",
         sprite: "obstacle-moving-2",
         anim: "obstacle-moving-2-anim",
         frames: { start: 0, end: 4 },
         frameRate: 3,
-        y: 220 * this.scaleY,
         hp: 1,
       },
       {
+        id: "bomba2",
         sprite: "obstacle-moving-3",
         anim: "obstacle-moving-3-anim",
         frames: { start: 0, end: 3 },
         frameRate: 3,
-        y: 220 * this.scaleY,
         hp: 1,
       },
       {
+        id: "bombaex",
         sprite: "obstacle-moving-4",
         anim: "obstacle-moving-4-anim",
         frames: { start: 0, end: 2 },
         frameRate: 3,
-        y: 220 * this.scaleY,
         hp: 2,
       },
       {
+        id: "estrelectra",
         sprite: "obstacle-moving-5",
         anim: "obstacle-moving-5-anim",
         frames: { start: 0, end: 3 },
         frameRate: 3,
-        y: 220 * this.scaleY,
         hp: 1,
       },
       {
+        id: "mechagoomba",
         sprite: "obstacle-moving-6",
         anim: "obstacle-moving-6-anim",
         frames: { start: 0, end: 4 },
         frameRate: 3,
-        y: 220 * this.scaleY,
         hp: 2,
       },
       {
+        id: "balota",
         sprite: "obstacle-static-1",
         anim: null,
-        y: 220 * this.scaleY,
         hp: 1,
       },
       {
+        id: "brick",
         sprite: "obstacle-static-2",
         anim: null,
-        y: 220 * this.scaleY,
+        hp: 1,
+      },
+      {
+        id: "cactus",
+        sprite: "obstacle-static-3",
+        anim: null,
         hp: 1,
       },
     ];
+
+    const mapObstacles = this.mapConfig.obstacles;
+    if (Array.isArray(mapObstacles)) {
+      this.obstacleTypes = this.obstacleTypes.filter((type) =>
+        mapObstacles.includes(type.id),
+      );
+    }
   }
 
   createCollectibleConfig() {
@@ -451,6 +464,8 @@ export class Start extends Phaser.Scene {
     if (this.ground.body.refreshBody) {
       this.ground.body.refreshBody();
     }
+
+    this.groundTopY = this.ground.body?.top ?? this.ground.getBounds().top;
   }
 
   /* ───────────────── PLAYER ───────────────── */
@@ -553,13 +568,18 @@ export class Start extends Phaser.Scene {
     if (this.gameOver) return;
 
     const type = Phaser.Utils.Array.GetRandom(this.obstacleTypes);
-    const obs = this.obstacles.create(this.obstacleSpawnX, type.y, type.sprite);
+    if (!type) return;
+
+    const obs = this.obstacles.create(this.obstacleSpawnX, 0, type.sprite);
 
     obs.maxHp = type.hp || 1;
     obs.hp = obs.maxHp;
     obs.obstacleType = type;
+    obs.setOrigin(type.originX ?? 0.5, type.originY ?? 0.5);
+    obs.setScale(type.scale ?? 1);
     obs.body.setSize(obs.width * 0.7, obs.height * 0.8);
     obs.body.setOffset(obs.width * 0.15, obs.height * 0.2);
+    this.placeObstacleOnGround(obs, type);
     obs.setVelocityX(this.currentObstacleSpeed);
 
     if (type.anim) obs.play(type.anim);
@@ -571,6 +591,18 @@ export class Start extends Phaser.Scene {
     });
   }
 
+  placeObstacleOnGround(obstacle, type = {}) {
+    const groundTop = this.getGroundTopY();
+    const offsetY = (type.groundOffsetY || 0) * this.scaleY;
+    const bottomOffset = obstacle.displayHeight * (1 - obstacle.originY);
+
+    obstacle.setY(groundTop - bottomOffset + offsetY);
+  }
+
+  getGroundTopY() {
+    return this.ground?.body?.top ?? this.groundTopY ?? this.groundY;
+  }
+
   spawnCollectible() {
     if (this.gameOver) return;
 
@@ -580,11 +612,44 @@ export class Start extends Phaser.Scene {
     const type = Phaser.Utils.Array.GetRandom(weightedTypes);
     const lanes = type.kind === "egg" ? this.eggLanes : this.collectibleLanes;
     const y = Phaser.Utils.Array.GetRandom(lanes);
-    const collectible = this.collectibles.create(
-      this.obstacleSpawnX,
-      y,
-      type.sprite,
-    );
+
+    if (type.kind === "coin") {
+      this.spawnCoinRow(type, y);
+    } else {
+      this.createCollectibleInstance(type, this.obstacleSpawnX, y);
+    }
+
+    this.time.addEvent({
+      delay: Phaser.Math.Between(1100, 2200),
+      callback: this.spawnCollectible,
+      callbackScope: this,
+    });
+  }
+
+  spawnCoinRow(type, y) {
+    const count = Phaser.Math.Between(5, 9);
+    const spacing = 24 * this.scaleX;
+    const pattern = Phaser.Utils.Array.GetRandom(["line", "rise", "fall", "arc"]);
+
+    for (let i = 0; i < count; i += 1) {
+      const x = this.obstacleSpawnX + i * spacing;
+      let offsetY = 0;
+
+      if (pattern === "rise") {
+        offsetY = -i * 5 * this.scaleY;
+      } else if (pattern === "fall") {
+        offsetY = i * 5 * this.scaleY;
+      } else if (pattern === "arc") {
+        const center = (count - 1) / 2;
+        offsetY = (Math.abs(i - center) - center) * 9 * this.scaleY;
+      }
+
+      this.createCollectibleInstance(type, x, y + offsetY);
+    }
+  }
+
+  createCollectibleInstance(type, x, y) {
+    const collectible = this.collectibles.create(x, y, type.sprite);
 
     collectible.collectibleType = type;
     collectible.setScale(type.scale);
@@ -618,11 +683,7 @@ export class Start extends Phaser.Scene {
       });
     }
 
-    this.time.addEvent({
-      delay: Phaser.Math.Between(1100, 2200),
-      callback: this.spawnCollectible,
-      callbackScope: this,
-    });
+    return collectible;
   }
 
   /* ───────────────── UI ───────────────── */

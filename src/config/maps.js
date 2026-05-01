@@ -189,7 +189,7 @@ export const MAPS = {
         scrollSpeed: 0.22,
       },
     ],
-    obstacles: "default",
+    obstacles: ["brick", "cactus"],
     collectibles: "default",
   },
 };
