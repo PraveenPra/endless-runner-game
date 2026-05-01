@@ -2,6 +2,7 @@ import { loadDigimons } from "./digimons.js";
 import { loadVFX } from "./vfx.js";
 import { loadAudio } from "./audio.js";
 import { loadBackgrounds } from "./backgrounds.js";
+import { loadGameplay } from "./gameplay.js";
 // import { loadTilemaps } from "./tilemaps.js";
 // import { loadItems } from "./items.js";
 // import { loadUI } from "./ui.js";
@@ -17,10 +18,7 @@ export class Preload extends Phaser.Scene {
     loadDigimons(this);
     loadBackgrounds(this);
     loadVFX(this);
-    this.load.spritesheet("collectible-eggs", "assets/collectables/static/eggs.png", {
-      frameWidth: 64,
-      frameHeight: 64,
-    });
+    loadGameplay(this);
     // loadItems(this);
     // loadTilemaps(this);
     loadAudio(this);

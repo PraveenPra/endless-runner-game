@@ -13,14 +13,6 @@ export class EditBodyScene extends Phaser.Scene {
     this.body = { ...this.originalProfile.body };
   }
 
-  preload() {
-    this.load.atlas(
-      this.digimon,
-      `assets/digimons/${this.digimon}/${this.digimon}.png`,
-      `assets/digimons/${this.digimon}/${this.digimon}.json`
-    );
-  }
-
   create() {
     createAnimations(this, this.digimon);
     this.cursors = this.input.keyboard.createCursorKeys();
