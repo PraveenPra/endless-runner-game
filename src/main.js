@@ -1,6 +1,7 @@
 import { Start } from "./scenes/Start.js";
 import { Preload } from "./scenes/Preload/Preload.js";
 import { MainMenuScene } from "./scenes/MainMenuScene.js";
+import { MapSelectScene } from "./scenes/MapSelectScene.js";
 import { CharacterSelect } from "./scenes/CharacterSelect.js";
 import { HatcheryScene } from "./scenes/HatcheryScene.js";
 import { ShopScene } from "./scenes/ShopScene.js";
@@ -25,6 +26,7 @@ const config = {
   scene: [
     Preload,
     MainMenuScene,
+    MapSelectScene,
     ShopScene,
     HatcheryScene,
     CharacterSelect,

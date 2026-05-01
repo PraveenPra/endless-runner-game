@@ -1,6 +1,7 @@
 import { GameState } from "../GameState.js";
 import { createAnimations } from "../systems/AnimationFactory.js";
 import { resolveProfile } from "../entities/digimon/resolveProfile.js";
+import { getMapConfig } from "../config/maps.js";
 
 export class Start extends Phaser.Scene {
   constructor() {
@@ -70,9 +71,10 @@ export class Start extends Phaser.Scene {
     this.nextAttackAt = 0;
     this.pendingAttackEvent = null;
     this.evolutionTimer = null;
-    this.evolutionIntroTimer = null;
-    this.dustTrailTimer = null;
-  }
+     this.evolutionIntroTimer = null;
+     this.dustTrailTimer = null;
+     this.mapConfig = getMapConfig(GameState.selectedMapKey);
+   }
 
   createLayout() {
     const { width, height } = this.cameras.main;
@@ -89,7 +91,6 @@ export class Start extends Phaser.Scene {
     this.groundY = 250 * this.scaleY;
     this.groundHeight = 25;
     this.groundScaleY = 1.8;
-    this.bgMidY = 202 * this.scaleY;
     this.gameOverY = 120 * this.scaleY;
     this.restartY = 150 * this.scaleY;
     this.obstacleSpawnX = this.sceneWidth + 40;
@@ -356,23 +357,34 @@ export class Start extends Phaser.Scene {
   /* ───────────────── ENVIRONMENT ───────────────── */
 
   createBackground() {
-    this.bgFar = this.add
-      .tileSprite(0, 0, this.sceneWidth, this.sceneHeight, "bg-far")
-      .setOrigin(0);
+    this.backgroundLayers = [];
 
-    this.bgMid = this.add
-      .tileSprite(0, this.bgMidY, this.sceneWidth, 70 * this.scaleY, "bg-mid")
-      .setOrigin(0, 0);
+    this.mapConfig.backgrounds.forEach((layer) => {
+      if (!this.textures.exists(layer.key)) return;
+
+      const y = (layer.y || 0) * this.scaleY;
+      const height = (layer.height || 270) * this.scaleY;
+      const sprite = this.add
+        .tileSprite(0, y, this.sceneWidth, height, layer.key)
+        .setOrigin(0, 0);
+
+      this.backgroundLayers.push({
+        sprite,
+        scrollSpeed: layer.scrollSpeed || 0,
+      });
+    });
   }
 
   createGround() {
+    const groundKey = this.mapConfig.ground?.key || "ground";
+
     this.ground = this.add
       .tileSprite(
         this.sceneWidth / 2,
         this.groundY,
         this.sceneWidth,
         this.groundHeight,
-        "ground",
+        groundKey,
       )
       .setScale(1, this.groundScaleY);
 
@@ -1481,8 +1493,9 @@ export class Start extends Phaser.Scene {
       this.currentObstacleSpeed / this.baseObstacleSpeed,
     );
     this.ground.tilePositionX += 2 * speedScale;
-    this.bgFar.tilePositionX += 0.1 * speedScale;
-    this.bgMid.tilePositionX += 0.6 * speedScale;
+    this.backgroundLayers.forEach((layer) => {
+      layer.sprite.tilePositionX += layer.scrollSpeed * speedScale;
+    });
   }
 
   cleanupObstacles() {

@@ -2,6 +2,7 @@ export const GameState = {
   // currently active digimon key
   selectedDigimon: null, // base form at checkpoint
   currentForm: null, // runtime only (DO NOT persist on death)
+  selectedMapKey: "desert",
 
   gameMode: "platformer",
 

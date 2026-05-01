@@ -1,5 +1,6 @@
 import { GameState } from "../GameState.js";
 import { createAnimations } from "../systems/AnimationFactory.js";
+import { getMapConfig } from "../config/maps.js";
 
 export class CharacterSelect extends Phaser.Scene {
   constructor() {
@@ -61,12 +62,31 @@ export class CharacterSelect extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    const map = getMapConfig(GameState.selectedMapKey);
+    this.add
+      .text(480, 74, `MAP: ${map.name.toUpperCase()}`, {
+        fontSize: "14px",
+        color: "#ffdcaa",
+      })
+      .setOrigin(0.5);
+
     this.createButtons();
   }
 
   createButtons() {
     this.add
-      .text(260, 530, "EDIT BODY", {
+      .text(190, 530, "MAP", {
+        fontSize: "18px",
+        color: "#000000",
+        backgroundColor: "#ffdcaa",
+        padding: { x: 15, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", () => this.scene.start("MapSelectScene"));
+
+    this.add
+      .text(335, 530, "EDIT BODY", {
         fontSize: "18px",
         color: "#ffffff",
         backgroundColor: "#333333",
@@ -77,7 +97,7 @@ export class CharacterSelect extends Phaser.Scene {
       .on("pointerdown", () => this.editBody());
 
     this.add
-      .text(480, 530, "EDIT PROJECTILES", {
+      .text(535, 530, "EDIT PROJECTILES", {
         fontSize: "18px",
         color: "#ffffff",
         backgroundColor: "#1f4d66",
@@ -88,7 +108,7 @@ export class CharacterSelect extends Phaser.Scene {
       .on("pointerdown", () => this.editProjectiles());
 
     this.add
-      .text(700, 530, "START", {
+      .text(785, 530, "START", {
         fontSize: "18px",
         color: "#000000",
         backgroundColor: "#00ff00",

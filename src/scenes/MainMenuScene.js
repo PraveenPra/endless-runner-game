@@ -25,7 +25,7 @@ export class MainMenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     startGame.on("pointerdown", () => {
-      this.scene.start("CharacterSelect");
+      this.scene.start("MapSelectScene");
     });
 
     const characterSelection = this.add
