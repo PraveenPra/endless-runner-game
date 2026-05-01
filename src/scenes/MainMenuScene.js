@@ -60,6 +60,18 @@ export class MainMenuScene extends Phaser.Scene {
       this.scene.start("HatcheryScene");
     });
 
+    const shop = this.add
+      .text(width / 2, 440, "Shop", {
+        fontSize: "28px",
+        color: "#8fd1ff",
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    shop.on("pointerdown", () => {
+      this.scene.start("ShopScene");
+    });
+
     // ==========================
     // HOVER EFFECT
     // ==========================
@@ -67,6 +79,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.addHover(platformer);
     this.addHover(survival);
     this.addHover(hatchery);
+    this.addHover(shop);
   }
 
   addHover(btn) {

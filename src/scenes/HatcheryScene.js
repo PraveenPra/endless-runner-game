@@ -9,6 +9,10 @@ export class HatcheryScene extends Phaser.Scene {
   create() {
     const { width, height } = this.cameras.main;
 
+    this.slotSprites = [];
+    this.slotLabels = [];
+    this.discardButtons = [];
+
     this.add
       .text(width / 2, 64, "HATCHERY", {
         fontSize: "34px",
@@ -16,13 +20,8 @@ export class HatcheryScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.eggSprite = this.add
-      .sprite(width / 2, 190, "collectible-eggs")
-      .setScale(1.7)
-      .setVisible(false);
-
     this.messageText = this.add
-      .text(width / 2, 300, "", {
+      .text(width / 2, 280, "", {
         fontSize: "18px",
         color: "#ffdcaa",
         align: "center",
@@ -38,14 +37,17 @@ export class HatcheryScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setVisible(false);
 
-    this.hatchButton = this.createButton(width / 2, 510, "HATCH", () =>
+    this.hatchButton = this.createButton(width / 2, 510, "HATCH FIRST EGG", () =>
       this.hatchEgg(),
     );
-    this.createButton(260, 510, "MAIN MENU", () =>
+    this.createButton(220, 510, "MAIN MENU", () =>
       this.scene.start("MainMenuScene"),
     );
-    this.createButton(700, 510, "CHARACTER SELECT", () =>
+    this.createButton(740, 510, "CHARACTER SELECT", () =>
       this.scene.start("CharacterSelect"),
+    );
+    this.createButton(width / 2, 470, "SHOP", () =>
+      this.scene.start("ShopScene"),
     );
 
     this.refreshEgg();
@@ -69,21 +71,59 @@ export class HatcheryScene extends Phaser.Scene {
   }
 
   refreshEgg() {
-    const egg = GameState.hatchery.pendingEgg;
+    const eggs = GameState.hatchery.eggs;
 
     this.resultSprite.setVisible(false);
     this.resultNameText.setVisible(false);
+    this.slotSprites.forEach((slot) => slot.destroy());
+    this.slotLabels.forEach((label) => label.destroy());
+    this.discardButtons.forEach((button) => button.destroy());
+    this.slotSprites = [];
+    this.slotLabels = [];
+    this.discardButtons = [];
 
-    if (!egg) {
-      this.eggSprite.setVisible(false);
+    const startX = this.cameras.main.centerX - (GameState.hatchery.capacity - 1) * 72;
+    for (let i = 0; i < GameState.hatchery.capacity; i += 1) {
+      const x = startX + i * 144;
+      const egg = eggs[i];
+
+      const slot = this.add
+        .rectangle(x, 185, 96, 110, 0x111a2e, 0.9)
+        .setStrokeStyle(2, egg ? 0xffdcaa : 0x516178);
+      this.slotSprites.push(slot);
+
+      const label = this.add
+        .text(x, 248, egg ? egg.rarity || "egg" : "empty", {
+          fontSize: "13px",
+          color: egg ? "#ffdcaa" : "#7d8ca3",
+        })
+        .setOrigin(0.5);
+      this.slotLabels.push(label);
+
+      if (egg) {
+        const eggSprite = this.add
+          .sprite(x, 181, "collectible-eggs")
+          .setFrame(egg.frameIndex || 0)
+          .setScale(1.15);
+        this.slotSprites.push(eggSprite);
+
+        const discard = this.createButton(x, 300, "DISCARD", () => {
+          GameState.hatchery.discardEgg(i);
+          this.refreshEgg();
+        });
+        discard.setFontSize("13px");
+        this.discardButtons.push(discard);
+      }
+    }
+
+    if (!eggs.length) {
       this.hatchButton.setAlpha(0.35);
-      this.messageText.setText("No egg waiting. Bring one back from a run.");
+      this.messageText.setText("No egg waiting. Bring one back from a run or buy one in the shop.");
       return;
     }
 
-    this.eggSprite.setFrame(egg.frameIndex || 0).setVisible(true);
     this.hatchButton.setAlpha(1);
-    this.messageText.setText("This egg is ready.");
+    this.messageText.setText(`${eggs.length}/${GameState.hatchery.capacity} hatchery slots filled.`);
   }
 
   hatchEgg() {
@@ -100,6 +140,7 @@ export class HatcheryScene extends Phaser.Scene {
     }
 
     createAnimations(this, digimonKey);
+    this.refreshEgg();
 
     const idleKey = `${digimonKey}_idle`;
     const flyKey = `${digimonKey}_fly`;
@@ -110,7 +151,6 @@ export class HatcheryScene extends Phaser.Scene {
         ? flyKey
         : runKey;
 
-    this.eggSprite.setVisible(false);
     this.resultSprite
       .setTexture(digimonKey)
       .setVisible(true)

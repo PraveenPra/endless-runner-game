@@ -894,12 +894,39 @@ export class Start extends Phaser.Scene {
 
   collectEgg(collectible) {
     const frameIndex = collectible.eggFrameIndex ?? collectible.frame?.name ?? 0;
-    this.heldEggFrameIndex = Number(frameIndex) || 0;
-    GameState.hatchery.savePendingEgg({
-      frameIndex: this.heldEggFrameIndex,
+    const eggFrameIndex = Number(frameIndex) || 0;
+    const saved = GameState.hatchery.savePendingEgg({
+      frameIndex: eggFrameIndex,
+      rarity: "found",
       collectedAt: Date.now(),
     });
+
+    if (!saved) {
+      this.showPickupMessage("HATCHERY FULL");
+      return;
+    }
+
+    this.heldEggFrameIndex = eggFrameIndex;
+    GameState.currency.addEggs(1);
     this.updateHeldEggIndicator();
+  }
+
+  showPickupMessage(text) {
+    const message = this.add
+      .text(this.player.x, this.player.y - 70 * this.scaleY, text, {
+        fontSize: "12px",
+        fill: "#ff7777",
+      })
+      .setOrigin(0.5)
+      .setDepth(40);
+
+    this.tweens.add({
+      targets: message,
+      y: message.y - 22 * this.scaleY,
+      alpha: 0,
+      duration: 850,
+      onComplete: () => message.destroy(),
+    });
   }
 
   updateHeldEggIndicator() {

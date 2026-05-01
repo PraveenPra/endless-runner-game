@@ -3,6 +3,7 @@ import { Preload } from "./scenes/Preload/Preload.js";
 import { MainMenuScene } from "./scenes/MainMenuScene.js";
 import { CharacterSelect } from "./scenes/CharacterSelect.js";
 import { HatcheryScene } from "./scenes/HatcheryScene.js";
+import { ShopScene } from "./scenes/ShopScene.js";
 import { EditBodyScene } from "./scenes/EditBodyScene.js";
 import { EditProjectileScene } from "./scenes/EditProjectileScene.js";
 
@@ -24,6 +25,7 @@ const config = {
   scene: [
     Preload,
     MainMenuScene,
+    ShopScene,
     HatcheryScene,
     CharacterSelect,
     EditBodyScene,

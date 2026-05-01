@@ -136,29 +136,92 @@ export const GameState = {
     gems: 0,
     eggs: 0,
 
+    load() {
+      try {
+        const saved = localStorage.getItem("currency");
+        if (!saved) return;
+
+        const parsed = JSON.parse(saved);
+        this.coins = Number(parsed.coins) || 0;
+        this.gems = Number(parsed.gems) || 0;
+        this.eggs = Number(parsed.eggs) || 0;
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+    },
+
+    save() {
+      try {
+        localStorage.setItem(
+          "currency",
+          JSON.stringify({
+            coins: this.coins,
+            gems: this.gems,
+            eggs: this.eggs,
+          }),
+        );
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+    },
+
     addCoins(value = 1) {
       this.coins += value;
+      this.save();
     },
 
     addGems(value = 1) {
       this.gems += value;
+      this.save();
     },
 
     addEggs(value = 1) {
       this.eggs += value;
+      this.save();
+    },
+
+    canAfford(cost = {}) {
+      return (
+        this.coins >= (cost.coins || 0) &&
+        this.gems >= (cost.gems || 0)
+      );
+    },
+
+    spend(cost = {}) {
+      if (!this.canAfford(cost)) return false;
+
+      this.coins -= cost.coins || 0;
+      this.gems -= cost.gems || 0;
+      this.save();
+      return true;
     },
   },
 
   hatchery: {
-    pendingEgg: null,
+    eggs: [],
+    capacity: 1,
     lastHatchedDigimon: null,
+
+    get pendingEgg() {
+      return this.eggs[0] || null;
+    },
 
     load() {
       try {
         const pending = localStorage.getItem("hatchery_pending_egg");
+        const eggs = localStorage.getItem("hatchery_eggs");
+        const capacity = localStorage.getItem("hatchery_capacity");
         const unlocked = localStorage.getItem("unlocked_base_forms");
 
-        this.pendingEgg = pending ? JSON.parse(pending) : null;
+        this.capacity = Math.max(1, Number(capacity) || 1);
+        if (eggs) {
+          this.eggs = JSON.parse(eggs).filter(Boolean).slice(0, this.capacity);
+        } else {
+          const legacyEgg = pending ? JSON.parse(pending) : null;
+          this.eggs = legacyEgg ? [legacyEgg] : [];
+          this.saveEggs();
+        }
+
         if (unlocked) {
           GameState.unlockedBaseForms = new Set(JSON.parse(unlocked));
         }
@@ -167,22 +230,60 @@ export const GameState = {
       }
     },
 
-    savePendingEgg(egg) {
-      this.pendingEgg = egg;
+    saveEggs() {
       try {
-        localStorage.setItem("hatchery_pending_egg", JSON.stringify(egg));
+        localStorage.setItem("hatchery_eggs", JSON.stringify(this.eggs));
+        if (this.pendingEgg) {
+          localStorage.setItem(
+            "hatchery_pending_egg",
+            JSON.stringify(this.pendingEgg),
+          );
+        } else {
+          localStorage.removeItem("hatchery_pending_egg");
+        }
       } catch (e) {
         // Ignore localStorage errors
       }
     },
 
-    clearPendingEgg() {
-      this.pendingEgg = null;
+    saveCapacity() {
       try {
-        localStorage.removeItem("hatchery_pending_egg");
+        localStorage.setItem("hatchery_capacity", String(this.capacity));
       } catch (e) {
         // Ignore localStorage errors
       }
+    },
+
+    savePendingEgg(egg) {
+      return this.addEgg(egg);
+    },
+
+    addEgg(egg) {
+      if (this.eggs.length >= this.capacity) {
+        return false;
+      }
+
+      this.eggs.push(egg);
+      this.saveEggs();
+      return true;
+    },
+
+    clearPendingEgg() {
+      this.eggs.shift();
+      this.saveEggs();
+    },
+
+    discardEgg(index = 0) {
+      if (!this.eggs[index]) return false;
+
+      this.eggs.splice(index, 1);
+      this.saveEggs();
+      return true;
+    },
+
+    increaseCapacity(amount = 1) {
+      this.capacity += amount;
+      this.saveCapacity();
     },
 
     saveUnlocks() {
@@ -230,3 +331,4 @@ try {
 }
 
 GameState.hatchery.load();
+GameState.currency.load();
