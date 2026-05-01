@@ -33,6 +33,10 @@ export class Start extends Phaser.Scene {
     this.createUI();
     this.createCollisions();
     this.setupInput();
+    this.startBackgroundMusic();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      this.stopBackgroundMusic(),
+    );
     this.startObstacleSpawner();
     this.startCollectibleSpawner();
   }
@@ -416,6 +420,55 @@ export class Start extends Phaser.Scene {
 
   /* ───────────────── ENVIRONMENT ───────────────── */
 
+  playSfx(key, config = {}) {
+    const soundKey = key.startsWith("sfx-") ? key : `sfx-${key}`;
+    if (!GameState.audio.sfxEnabled || !this.cache.audio.exists(soundKey))
+      return;
+
+    this.sound.play(soundKey, {
+      volume: GameState.audio.sfxVolume,
+      ...config,
+    });
+  }
+
+  startBackgroundMusic() {
+    if (!GameState.audio.musicEnabled || !this.cache.audio.exists("music-bg-1"))
+      return;
+
+    const existingMusic = this.sound.get("music-bg-1");
+    if (existingMusic?.isPlaying) {
+      this.bgMusic = existingMusic;
+      return;
+    }
+
+    this.bgMusic = this.sound.add("music-bg-1", {
+      loop: true,
+      volume: GameState.audio.musicVolume,
+    });
+    this.bgMusic.play();
+  }
+
+  stopBackgroundMusic() {
+    if (this.bgMusic?.isPlaying) {
+      this.bgMusic.stop();
+    }
+    this.bgMusic = null;
+  }
+
+  stopGameplaySfx() {
+    [
+      "sfx-blast-hit",
+      "sfx-collect-shard",
+      "sfx-evolution",
+      "sfx-hurt",
+      "sfx-impact",
+      "sfx-jump",
+      "sfx-jump1",
+    ].forEach((key) => {
+      this.sound.stopByKey(key);
+    });
+  }
+
   createBackground() {
     this.backgroundLayers = [];
 
@@ -771,32 +824,56 @@ export class Start extends Phaser.Scene {
     });
     this.powerPanel.setVisible(false);
 
-    this.shieldText = createBitmapLabel(this, this.sceneWidth - 206, 24, "shield:0", {
-      size: SMALL_FONT_SIZE,
-      tint: 0xf7ffe8,
-      originX: 0,
-    }).setDepth(52);
+    this.shieldText = createBitmapLabel(
+      this,
+      this.sceneWidth - 206,
+      24,
+      "shield:0",
+      {
+        size: SMALL_FONT_SIZE,
+        tint: 0xf7ffe8,
+        originX: 0,
+      },
+    ).setDepth(52);
     this.shieldText.setVisible(false);
 
-    this.magnetText = createBitmapLabel(this, this.sceneWidth - 206, 44, "magnet", {
-      size: SMALL_FONT_SIZE,
-      tint: 0xf7ffe8,
-      originX: 0,
-    }).setDepth(52);
+    this.magnetText = createBitmapLabel(
+      this,
+      this.sceneWidth - 206,
+      44,
+      "magnet",
+      {
+        size: SMALL_FONT_SIZE,
+        tint: 0xf7ffe8,
+        originX: 0,
+      },
+    ).setDepth(52);
     this.magnetText.setVisible(false);
 
-    this.speedBoostText = createBitmapLabel(this, this.sceneWidth - 206, 64, "speed", {
-      size: SMALL_FONT_SIZE,
-      tint: 0xf7ffe8,
-      originX: 0,
-    }).setDepth(52);
+    this.speedBoostText = createBitmapLabel(
+      this,
+      this.sceneWidth - 206,
+      64,
+      "speed",
+      {
+        size: SMALL_FONT_SIZE,
+        tint: 0xf7ffe8,
+        originX: 0,
+      },
+    ).setDepth(52);
     this.speedBoostText.setVisible(false);
 
-    this.evolutionText = createBitmapLabel(this, this.sceneWidth - 206, 84, "rampage", {
-      size: SMALL_FONT_SIZE,
-      tint: 0xf7ffe8,
-      originX: 0,
-    }).setDepth(52);
+    this.evolutionText = createBitmapLabel(
+      this,
+      this.sceneWidth - 206,
+      84,
+      "rampage",
+      {
+        size: SMALL_FONT_SIZE,
+        tint: 0xf7ffe8,
+        originX: 0,
+      },
+    ).setDepth(52);
     this.evolutionText.setVisible(false);
 
     this.createGameOverUI();
@@ -806,21 +883,43 @@ export class Start extends Phaser.Scene {
     this.gameOverItems = [];
 
     this.gameOverOverlay = this.add
-      .rectangle(this.sceneWidth / 2, this.sceneHeight / 2, this.sceneWidth, this.sceneHeight, 0x000000, 0.45)
+      .rectangle(
+        this.sceneWidth / 2,
+        this.sceneHeight / 2,
+        this.sceneWidth,
+        this.sceneHeight,
+        0x000000,
+        0.45,
+      )
       .setDepth(90)
       .setVisible(false);
 
-    this.gameOverPanel = createPanel(this, this.sceneWidth / 2, this.sceneHeight / 2, 470, 368, {
-      depth: 91,
-      alpha: 0.97,
-    });
+    this.gameOverPanel = createPanel(
+      this,
+      this.sceneWidth / 2,
+      this.sceneHeight / 2,
+      470,
+      368,
+      {
+        depth: 91,
+        alpha: 0.97,
+      },
+    );
     this.gameOverPanel.setVisible(false);
 
-    this.gameOverText = createBitmapLabel(this, this.sceneWidth / 2, 132, "GAMEOVER", {
-      font: "bigFont",
-      size: 48,
-      tint: 0xf7ffe8,
-    }).setDepth(92).setVisible(false);
+    this.gameOverText = createBitmapLabel(
+      this,
+      this.sceneWidth / 2,
+      132,
+      "GAMEOVER",
+      {
+        font: "bigFont",
+        size: 48,
+        tint: 0xf7ffe8,
+      },
+    )
+      .setDepth(92)
+      .setVisible(false);
 
     const rows = [
       ["finalScoreText", "score:0", 190],
@@ -835,19 +934,39 @@ export class Start extends Phaser.Scene {
       this[prop] = createBitmapLabel(this, this.sceneWidth / 2, y, text, {
         size: SMALL_FONT_SIZE,
         tint: 0xf7ffe8,
-      }).setDepth(92).setVisible(false);
+      })
+        .setDepth(92)
+        .setVisible(false);
     });
 
-    this.restartText = createButton(this, this.sceneWidth / 2 - 120, 430, 190, 44, "restart", () => {
-      this.scene.restart();
-    }, {
-      depth: 92,
-    });
-    this.menuText = createButton(this, this.sceneWidth / 2 + 120, 430, 190, 44, "menu", () => {
-      this.scene.start("MainMenuScene");
-    }, {
-      depth: 92,
-    });
+    this.restartText = createButton(
+      this,
+      this.sceneWidth / 2 - 120,
+      430,
+      190,
+      44,
+      "restart",
+      () => {
+        this.scene.restart();
+      },
+      {
+        depth: 92,
+      },
+    );
+    this.menuText = createButton(
+      this,
+      this.sceneWidth / 2 + 120,
+      430,
+      190,
+      44,
+      "menu",
+      () => {
+        this.scene.start("MainMenuScene");
+      },
+      {
+        depth: 92,
+      },
+    );
 
     this.gameOverItems = [
       this.gameOverOverlay,
@@ -929,9 +1048,7 @@ export class Start extends Phaser.Scene {
 
     collectible.destroy();
 
-    if (this.sound.get("sfx-collect-shard")) {
-      this.sound.play("sfx-collect-shard", { volume: 0.35 });
-    }
+    this.playSfx("collect-shard", { volume: 0.35 });
   }
 
   collectShield() {
@@ -1158,9 +1275,7 @@ export class Start extends Phaser.Scene {
   }
 
   playEvolutionVFX() {
-    if (this.sound.get("sfx-evolution")) {
-      this.sound.play("sfx-evolution", { volume: 0.4 });
-    }
+    this.playSfx("evolution", { volume: 0.4 });
 
     this.cameras.main.shake(260, 0.012);
     this.cameras.main.flash(160, 255, 245, 130);
@@ -1393,9 +1508,7 @@ export class Start extends Phaser.Scene {
     this.spawnImpactVFX(x, y, impactKey);
     this.cameras.main.shake(120, 0.009);
 
-    if (this.sound.get("sfx-blast-hit")) {
-      this.sound.play("sfx-blast-hit", { volume: 0.25 });
-    }
+    this.playSfx("impact", { volume: 0.45 });
   }
 
   handleProjectileObstacleHit(projectile, obstacle) {
@@ -1411,6 +1524,7 @@ export class Start extends Phaser.Scene {
 
     obstacle.hp = (obstacle.hp || 1) - (projectile.damage || 1);
     this.spawnImpactVFX(projectile.x, projectile.y, projectile.impactVFX);
+    this.playSfx("impact", { volume: 0.35 });
     projectile.destroy();
 
     if (obstacle.hp <= 0) {
@@ -1440,6 +1554,9 @@ export class Start extends Phaser.Scene {
   triggerGameOver() {
     if (this.gameOver) return;
     this.gameOver = true;
+    this.stopBackgroundMusic();
+    this.stopGameplaySfx();
+    this.playSfx("gameover", { volume: 0.55 });
 
     // Update session statistics in GameState
     GameState.session.score = Math.floor(this.score);
@@ -1489,10 +1606,16 @@ export class Start extends Phaser.Scene {
     // Display statistics
     setBitmapLabelText(this.finalScoreText, `score:${GameState.session.score}`);
     setBitmapLabelText(this.highScoreText, `best:${GameState.highScore}`);
-    setBitmapLabelText(this.coinsEarnedText, `coins:${GameState.session.coins}`);
+    setBitmapLabelText(
+      this.coinsEarnedText,
+      `coins:${GameState.session.coins}`,
+    );
     setBitmapLabelText(this.gemsEarnedText, `gems:${GameState.session.gems}`);
     setBitmapLabelText(this.eggsEarnedText, `eggs:${GameState.session.eggs}`);
-    setBitmapLabelText(this.distanceText, `distance:${GameState.session.distance}`);
+    setBitmapLabelText(
+      this.distanceText,
+      `distance:${GameState.session.distance}`,
+    );
   }
 
   /* ───────────────── INPUT ───────────────── */
@@ -1550,7 +1673,7 @@ export class Start extends Phaser.Scene {
       if (this.anims.exists(jumpKey)) {
         this.player.play(jumpKey, true);
       }
-      this.sound.play("sfx-jump");
+      this.playSfx("jump");
     }
   }
 
@@ -1573,9 +1696,7 @@ export class Start extends Phaser.Scene {
       this.player.play(attackAnimKey, true);
     }
 
-    if (this.sound.get("sfx-blast-hit")) {
-      this.sound.play("sfx-blast-hit", { volume: 0.35 });
-    }
+    this.playSfx("hurt", { volume: 0.35 });
 
     const frameRate = 10;
     const fireFrame = Math.max(1, attack.fireFrame || 1);

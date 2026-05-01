@@ -10,6 +10,8 @@ const sfx = [
   ["hurt", "hurt-flinch.mp3"],
   ["gameover", "game-over.wav"],
   ["jump", "jump.wav"],
+  ["jump1", "jump1.wav"],
+  ["impact", "impact.wav"],
 ];
 
 const music = [["bg-1", "BG-MUSIC3.wav"]];
