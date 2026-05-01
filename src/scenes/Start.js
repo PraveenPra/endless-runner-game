@@ -31,48 +31,48 @@ export class Start extends Phaser.Scene {
 
   /* ───────────────── STATE ───────────────── */
 
-   initState() {
-     // Reset session statistics in GameState for new game
-     GameState.session = {
-       score: 0,
-       coins: 0,
-       gems: 0,
-       eggs: 0,
-       distance: 0,
-     };
-     
-     this.score = 0;
-     this.coins = GameState.currency.coins;
-     this.gems = GameState.currency.gems;
-     this.eggs = GameState.currency.eggs;
-     this.heldEggFrameIndex = GameState.hatchery.pendingEgg?.frameIndex ?? null;
-     this.scoreSpeed = 0.01;
-     this.gameOver = false;
-     this.maxJumps = 2;
-     this.jumpCount = 0;
-     this.shieldHits = 0;
-     this.maxShieldHits = 3;
-     this.magnetActive = false;
-     this.magnetDuration = 8000;
-     this.speedBoostActive = false;
-     this.speedBoostDuration = 8000;
-     this.evolutionActive = false;
-     this.evolutionIntroActive = false;
-     this.evolutionDuration = 8000;
-     this.evolutionIntroDuration = 850;
-     this.evolutionSpeedMultiplier = 2.2;
-     this.evolutionIntroSpeedMultiplier = 0.08;
-     this.activeDigimonKey = GameState.selectedDigimon || "agumon";
-     this.baseDigimonKey = this.activeDigimonKey;
-     this.baseObstacleSpeed = -120;
-     this.currentObstacleSpeed = -120;
-     this.projectileSpeedBoost = 1;
-     this.nextAttackAt = 0;
-     this.pendingAttackEvent = null;
-     this.evolutionTimer = null;
-     this.evolutionIntroTimer = null;
-     this.dustTrailTimer = null;
-   }
+  initState() {
+    // Reset session statistics in GameState for new game
+    GameState.session = {
+      score: 0,
+      coins: 0,
+      gems: 0,
+      eggs: 0,
+      distance: 0,
+    };
+
+    this.score = 0;
+    this.coins = GameState.currency.coins;
+    this.gems = GameState.currency.gems;
+    this.eggs = GameState.currency.eggs;
+    this.heldEggFrameIndex = GameState.hatchery.pendingEgg?.frameIndex ?? null;
+    this.scoreSpeed = 0.01;
+    this.gameOver = false;
+    this.maxJumps = 2;
+    this.jumpCount = 0;
+    this.shieldHits = 0;
+    this.maxShieldHits = 3;
+    this.magnetActive = false;
+    this.magnetDuration = 8000;
+    this.speedBoostActive = false;
+    this.speedBoostDuration = 8000;
+    this.evolutionActive = false;
+    this.evolutionIntroActive = false;
+    this.evolutionDuration = 8000;
+    this.evolutionIntroDuration = 850;
+    this.evolutionSpeedMultiplier = 2.2;
+    this.evolutionIntroSpeedMultiplier = 0.08;
+    this.activeDigimonKey = GameState.selectedDigimon || "agumon";
+    this.baseDigimonKey = this.activeDigimonKey;
+    this.baseObstacleSpeed = -120;
+    this.currentObstacleSpeed = -120;
+    this.projectileSpeedBoost = 1;
+    this.nextAttackAt = 0;
+    this.pendingAttackEvent = null;
+    this.evolutionTimer = null;
+    this.evolutionIntroTimer = null;
+    this.dustTrailTimer = null;
+  }
 
   createLayout() {
     const { width, height } = this.cameras.main;
@@ -414,7 +414,10 @@ export class Start extends Phaser.Scene {
     const frameHeight = this.player.frame.height;
 
     this.player.setScale(visualScale);
-    this.player.body.setSize(body.width * visualScale, body.height * visualScale);
+    this.player.body.setSize(
+      body.width * visualScale,
+      body.height * visualScale,
+    );
     this.player.body.setOffset(
       frameWidth / 2 - (body.width * visualScale) / 2 + body.offsetX,
       frameHeight - body.height * visualScale + body.offsetY,
@@ -617,12 +620,17 @@ export class Start extends Phaser.Scene {
       .setVisible(false);
 
     this.menuText = this.add
-      .text(this.sceneWidth / 2, this.restartY + 26 * this.scaleY, "MAIN MENU", {
-        fontSize: "13px",
-        fill: "#000000",
-        backgroundColor: "#ffdcaa",
-        padding: { x: 12, y: 6 },
-      })
+      .text(
+        this.sceneWidth / 2,
+        this.restartY + 26 * this.scaleY,
+        "MAIN MENU",
+        {
+          fontSize: "13px",
+          fill: "#000000",
+          backgroundColor: "#ffdcaa",
+          padding: { x: 12, y: 6 },
+        },
+      )
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .setVisible(false);
@@ -796,7 +804,8 @@ export class Start extends Phaser.Scene {
   }
 
   collectEgg(collectible) {
-    const frameIndex = collectible.eggFrameIndex ?? collectible.frame?.name ?? 0;
+    const frameIndex =
+      collectible.eggFrameIndex ?? collectible.frame?.name ?? 0;
     const eggFrameIndex = Number(frameIndex) || 0;
     const saved = GameState.hatchery.savePendingEgg({
       frameIndex: eggFrameIndex,
@@ -980,7 +989,11 @@ export class Start extends Phaser.Scene {
     this.cameras.main.shake(260, 0.012);
     this.cameras.main.flash(160, 255, 245, 130);
 
-    const burst = this.add.sprite(this.player.x, this.player.y - 35 * this.scaleY, "vfx-gnd-blast");
+    const burst = this.add.sprite(
+      this.player.x,
+      this.player.y - 35 * this.scaleY,
+      "vfx-gnd-blast",
+    );
     burst.setDepth(25);
     burst.setScale(2.2);
     if (this.anims.exists("vfx-gnd-blast")) {
@@ -1214,65 +1227,77 @@ export class Start extends Phaser.Scene {
     }
   }
 
-   triggerGameOver() {
-     if (this.gameOver) return;
-     this.gameOver = true;
+  triggerGameOver() {
+    if (this.gameOver) return;
+    this.gameOver = true;
 
-     // Update session statistics in GameState
-     GameState.session.score = Math.floor(this.score);
-     GameState.session.coins = this.coins;
-     GameState.session.gems = this.gems;
-     GameState.session.eggs = this.eggs;
-     GameState.session.distance = Math.floor(this.score); // Distance based on score
+    // Update session statistics in GameState
+    GameState.session.score = Math.floor(this.score);
+    GameState.session.coins = this.coins;
+    GameState.session.gems = this.gems;
+    GameState.session.eggs = this.eggs;
+    GameState.session.distance = Math.floor(this.score); // Distance based on score
 
-     // Check and update high score
-     if (GameState.session.score > GameState.highScore) {
-       GameState.highScore = GameState.session.score;
-       // Save high score to localStorage
-       try {
-         localStorage.setItem("highScore", GameState.highScore.toString());
-       } catch (e) {
-         // Ignore localStorage errors
-       }
-     }
+    // Check and update high score
+    if (GameState.session.score > GameState.highScore) {
+      GameState.highScore = GameState.session.score;
+      // Save high score to localStorage
+      try {
+        localStorage.setItem("highScore", GameState.highScore.toString());
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+    }
 
-     this.player.setVelocity(0);
-     this.player.anims.pause();
+    this.player.setVelocity(0);
+    this.player.anims.pause();
 
-     this.obstacles.children.iterate((o) => {
-       if (!o) return;
-       o.setVelocityX(0);
-       if (o.anims) o.anims.pause();
-     });
+    this.obstacles.children.iterate((o) => {
+      if (!o) return;
+      o.setVelocityX(0);
+      if (o.anims) o.anims.pause();
+    });
 
-     if (this.projectiles) {
-       this.projectiles.children.iterate((projectile) => {
-         if (!projectile) return;
-         projectile.setVelocityX(0);
-         if (projectile.anims) projectile.anims.pause();
-       });
-     }
+    if (this.projectiles) {
+      this.projectiles.children.iterate((projectile) => {
+        if (!projectile) return;
+        projectile.setVelocityX(0);
+        if (projectile.anims) projectile.anims.pause();
+      });
+    }
 
-     this.collectibles.children.iterate((coin) => {
-       if (!coin) return;
-       coin.setVelocityX(0);
-       if (coin.anims) coin.anims.pause();
-     });
+    this.collectibles.children.iterate((coin) => {
+      if (!coin) return;
+      coin.setVelocityX(0);
+      if (coin.anims) coin.anims.pause();
+    });
 
-     this.time.removeAllEvents();
+    this.time.removeAllEvents();
 
-     this.gameOverText.setVisible(true);
-     this.restartText.setVisible(true);
-     this.menuText.setVisible(true);
+    this.gameOverText.setVisible(true);
+    this.restartText.setVisible(true);
+    this.menuText.setVisible(true);
 
-     // Display statistics
-     this.finalScoreText.setText("SCORE: " + GameState.session.score).setVisible(true);
-     this.highScoreText.setText("HIGH SCORE: " + GameState.highScore).setVisible(true);
-     this.coinsEarnedText.setText("COINS: " + GameState.session.coins).setVisible(true);
-     this.gemsEarnedText.setText("GEMS: " + GameState.session.gems).setVisible(true);
-     this.eggsEarnedText.setText("EGGS: " + GameState.session.eggs).setVisible(true);
-     this.distanceText.setText("DISTANCE: " + GameState.session.distance + "m").setVisible(true);
-   }
+    // Display statistics
+    this.finalScoreText
+      .setText("SCORE: " + GameState.session.score)
+      .setVisible(true);
+    this.highScoreText
+      .setText("HIGH SCORE: " + GameState.highScore)
+      .setVisible(true);
+    this.coinsEarnedText
+      .setText("COINS: " + GameState.session.coins)
+      .setVisible(true);
+    this.gemsEarnedText
+      .setText("GEMS: " + GameState.session.gems)
+      .setVisible(true);
+    this.eggsEarnedText
+      .setText("EGGS: " + GameState.session.eggs)
+      .setVisible(true);
+    this.distanceText
+      .setText("DISTANCE: " + GameState.session.distance + "m")
+      .setVisible(true);
+  }
 
   /* ───────────────── INPUT ───────────────── */
 
@@ -1329,7 +1354,7 @@ export class Start extends Phaser.Scene {
       if (this.anims.exists(jumpKey)) {
         this.player.play(jumpKey, true);
       }
-      this.sound.play("jump");
+      this.sound.play("sfx-jump");
     }
   }
 
@@ -1452,7 +1477,9 @@ export class Start extends Phaser.Scene {
   }
 
   scrollWorld() {
-    const speedScale = Math.abs(this.currentObstacleSpeed / this.baseObstacleSpeed);
+    const speedScale = Math.abs(
+      this.currentObstacleSpeed / this.baseObstacleSpeed,
+    );
     this.ground.tilePositionX += 2 * speedScale;
     this.bgFar.tilePositionX += 0.1 * speedScale;
     this.bgMid.tilePositionX += 0.6 * speedScale;

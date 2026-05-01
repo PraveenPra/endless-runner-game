@@ -4,6 +4,9 @@ export const backgrounds = [
   { key: "bg3", path: "assets/backgrounds/plx-3.png" },
   { key: "bg4", path: "assets/backgrounds/plx-2.png" },
   { key: "bg5", path: "assets/backgrounds/plx-1.png" },
+  { key: "ground", path: "assets/ground.png" },
+  { key: "bg-far", path: "assets/sky.png" },
+  { key: "bg-mid", path: "assets/bg-mid.png" },
 ];
 
 export function loadBackgrounds(scene) {

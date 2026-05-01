@@ -9,6 +9,7 @@ const sfx = [
   ["level-complete", "level-completion.wav"],
   ["hurt", "hurt-flinch.mp3"],
   ["gameover", "game-over.wav"],
+  ["jump", "jump.wav"],
 ];
 
 const music = [["bg-1", "BG-MUSIC3.wav"]];
