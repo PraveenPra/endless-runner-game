@@ -90,6 +90,7 @@ export class Start extends Phaser.Scene {
     this.magnetDuration = 8000;
     this.speedBoostActive = false;
     this.speedBoostDuration = 8000;
+    this.nextSpeedTrailAt = 0;
     this.evolutionActive = false;
     this.evolutionIntroActive = false;
     this.evolutionFreezeActive = false;
@@ -1150,9 +1151,6 @@ export class Start extends Phaser.Scene {
       delay: this.magnetDuration,
       callback: () => {
         this.magnetActive = false;
-        if (this.magnetSprite) {
-          this.magnetSprite.setVisible(false);
-        }
         if (this.magnetText) {
           this.magnetText.setVisible(false);
         }
@@ -1170,9 +1168,6 @@ export class Start extends Phaser.Scene {
       callback: () => {
         this.speedBoostActive = false;
         this.updateWorldSpeed();
-        if (this.speedBoostSprite) {
-          this.speedBoostSprite.setVisible(false);
-        }
         if (this.speedBoostText) {
           this.speedBoostText.setVisible(false);
         }
@@ -1524,37 +1519,51 @@ export class Start extends Phaser.Scene {
     }
   }
 
+  updateSpeedBoostTrail() {
+    if (
+      !this.speedBoostActive ||
+      !this.player ||
+      !this.player.active ||
+      this.time.now < this.nextSpeedTrailAt
+    ) {
+      return;
+    }
+
+    this.nextSpeedTrailAt = this.time.now + 45;
+    const bodyRect = this.getPlayerBodyRect();
+    const lineCount = Phaser.Math.Between(2, 3);
+
+    for (let i = 0; i < lineCount; i += 1) {
+      const y =
+        bodyRect.y + Phaser.Math.FloatBetween(0.18, 0.82) * bodyRect.height;
+      const length = Phaser.Math.Between(22, 42) * this.scaleX;
+      const x = bodyRect.x - Phaser.Math.Between(8, 18) * this.scaleX;
+      const line = this.add.graphics();
+      const color = Phaser.Utils.Array.GetRandom([0xffffff, 0x8ff3ff, 0xfff28f]);
+
+      line.setDepth(9);
+      line.lineStyle(Phaser.Math.Between(1, 2), color, 0.82);
+      line.beginPath();
+      line.moveTo(x, y);
+      line.lineTo(x - length, y + Phaser.Math.Between(-2, 2) * this.scaleY);
+      line.strokePath();
+
+      this.tweens.add({
+        targets: line,
+        x: line.x - 48 * this.scaleX,
+        alpha: 0,
+        duration: 180,
+        ease: "Quad.easeOut",
+        onComplete: () => line.destroy(),
+      });
+    }
+  }
+
   updatePowerUpIndicator() {
-    if (this.magnetActive && !this.magnetSprite) {
-      this.magnetSprite = this.add.sprite(
-        this.player.x + 20 * this.scaleX,
-        this.player.y - 30 * this.scaleY,
-        "magnet-powerup",
-      );
-      this.magnetSprite.setScale(0.7);
-    }
-    if (this.magnetSprite) {
-      this.magnetSprite.setVisible(this.magnetActive);
-      this.magnetSprite.x = this.player.x + 20 * this.scaleX;
-      this.magnetSprite.y = this.player.y - 25 * this.scaleY;
-    }
     if (this.magnetText) {
       this.magnetText.setVisible(this.magnetActive);
     }
 
-    if (this.speedBoostActive && !this.speedBoostSprite) {
-      this.speedBoostSprite = this.add.sprite(
-        this.player.x - 20 * this.scaleX,
-        this.player.y - 30 * this.scaleY,
-        "speedboost-powerup",
-      );
-      this.speedBoostSprite.setScale(0.7);
-    }
-    if (this.speedBoostSprite) {
-      this.speedBoostSprite.setVisible(this.speedBoostActive);
-      this.speedBoostSprite.x = this.player.x - 20 * this.scaleX;
-      this.speedBoostSprite.y = this.player.y - 25 * this.scaleY;
-    }
     if (this.speedBoostText) {
       this.speedBoostText.setVisible(this.speedBoostActive);
     }
@@ -1678,6 +1687,8 @@ export class Start extends Phaser.Scene {
   }
 
   handleObstacleHit(obstacle) {
+    if (!obstacle || !obstacle.active || obstacle.isBreaking) return;
+
     if (this.evolutionActive) {
       this.anchorPlayerRunPosition();
       this.breakObstacle(obstacle);
@@ -1700,7 +1711,8 @@ export class Start extends Phaser.Scene {
   }
 
   breakObstacle(obstacle) {
-    if (!obstacle || !obstacle.active) return;
+    if (!obstacle || !obstacle.active || obstacle.isBreaking) return;
+    obstacle.isBreaking = true;
 
     const x = obstacle.x;
     const y = obstacle.y;
@@ -1708,7 +1720,15 @@ export class Start extends Phaser.Scene {
       ? "vfx-explosion"
       : "impact-hit";
 
-    obstacle.destroy();
+    if (obstacle.body) {
+      obstacle.body.enable = false;
+      obstacle.setVelocity(0, 0);
+    }
+    obstacle.setActive(false);
+    obstacle.setVisible(false);
+    this.time.delayedCall(0, () => {
+      if (obstacle && !obstacle.destroyed) obstacle.destroy();
+    });
     this.spawnImpactVFX(x, y, impactKey);
     this.cameras.main.shake(120, 0.009);
 
@@ -1853,6 +1873,7 @@ export class Start extends Phaser.Scene {
       this.cleanupCollectibles();
       this.updateShieldIndicator();
       this.updatePowerUpIndicator();
+      this.updateSpeedBoostTrail();
       if (this.magnetActive) {
         this.updateMagnetAttraction();
       }
