@@ -5,8 +5,45 @@ import {
   createButton,
   createPanel,
   setBitmapLabelText,
-  SMALL_FONT_SIZE,
 } from "../ui/PixelUI.js";
+
+const UI_FONT = "allFont";
+const PANEL = {
+  atlas: "panel-blue",
+  prefix: "panel-blue",
+  slice: 32,
+};
+const BUTTON_BASE = {
+  atlas: "simple-buttons",
+  layout: "horizontal",
+  slice: 32,
+  font: UI_FONT,
+  fontSize: 24,
+  tint: 0x162032,
+};
+const ICON_BUTTON_BASE = {
+  atlas: "simple-buttons",
+  layout: "single",
+  slice: 32,
+};
+
+function buttonStyle(color, options = {}) {
+  return {
+    ...BUTTON_BASE,
+    prefix: `button-${color}-v`,
+    ...options,
+  };
+}
+
+function iconButtonStyle(color, icon, options = {}) {
+  return {
+    ...ICON_BUTTON_BASE,
+    prefix: `button-${color}`,
+    icon,
+    iconSize: 21,
+    ...options,
+  };
+}
 
 export class HatcheryScene extends Phaser.Scene {
   constructor() {
@@ -25,15 +62,18 @@ export class HatcheryScene extends Phaser.Scene {
   }
 
   createHeader(width) {
-    createPanel(this, width / 2, 66, 560, 96, { depth: 4, alpha: 0.96 });
+    createPanel(this, width / 2, 66, 560, 96, { ...PANEL, depth: 4, alpha: 0.96 });
+    this.add.image(width / 2 - 142, 62, "icons", "icon-key").setScale(1.45).setDepth(7);
     createBitmapLabel(this, width / 2, 62, "HATCHERY", {
-      font: "bigFont",
-      size: 48,
+      font: UI_FONT,
+      size: 40,
       tint: 0xf7ffe8,
     }).setDepth(6);
+    this.add.image(width / 2 + 142, 62, "icons", "icon-key").setScale(1.45).setDepth(7);
 
     this.messageText = createBitmapLabel(this, width / 2, 126, "", {
-      size: SMALL_FONT_SIZE,
+      font: UI_FONT,
+      size: 22,
       tint: 0xf7ffe8,
     }).setDepth(6);
   }
@@ -45,7 +85,8 @@ export class HatcheryScene extends Phaser.Scene {
       .setVisible(false);
 
     this.resultNameText = createBitmapLabel(this, width / 2, 466, "", {
-      size: SMALL_FONT_SIZE,
+      font: UI_FONT,
+      size: 26,
       tint: 0xf7ffe8,
     })
       .setDepth(7)
@@ -59,19 +100,45 @@ export class HatcheryScene extends Phaser.Scene {
       height - 82,
       270,
       48,
-      "hatch",
+      "HATCH",
       () => this.hatchEgg(),
-      { depth: 8 },
+      {
+        ...buttonStyle("lime", {
+          icon: "icon-star",
+          iconSize: 20,
+          textX: 15,
+          fontSize: 27,
+        }),
+        depth: 8,
+      },
     );
 
-    createButton(this, 160, height - 34, 210, 42, "menu", () =>
+    createButton(this, 132, height - 34, 54, 42, "", () =>
       this.scene.start("MainMenuScene"),
+      { ...iconButtonStyle("gray", "icon-left-arrow"), depth: 8 },
     );
-    createButton(this, width / 2, height - 34, 210, 42, "shop", () =>
+    createButton(this, width / 2, height - 34, 210, 42, "SHOP", () =>
       this.scene.start("ShopScene"),
+      {
+        ...buttonStyle("yellow", {
+          icon: "icon-diamond",
+          iconSize: 18,
+          textX: 13,
+        }),
+        depth: 8,
+      },
     );
-    createButton(this, 800, height - 34, 210, 42, "character", () =>
+    createButton(this, 810, height - 34, 220, 42, "CHARACTER", () =>
       this.scene.start("CharacterSelect"),
+      {
+        ...buttonStyle("gray", {
+          icon: "icon-login",
+          iconSize: 18,
+          textX: 16,
+          fontSize: 21,
+        }),
+        depth: 8,
+      },
     );
   }
 
@@ -85,14 +152,15 @@ export class HatcheryScene extends Phaser.Scene {
 
     if (!eggs.length) {
       this.hatchButton.setAlpha(0.35);
-      setBitmapLabelText(this.messageText, "no-eggs");
+      setBitmapLabelText(this.messageText, "NO EGGS", UI_FONT);
       return;
     }
 
     this.hatchButton.setAlpha(1);
     setBitmapLabelText(
       this.messageText,
-      `slots:${eggs.length}/${GameState.hatchery.capacity}`,
+      `SLOTS: ${eggs.length}/${GameState.hatchery.capacity}`,
+      UI_FONT,
     );
   }
 
@@ -108,14 +176,23 @@ export class HatcheryScene extends Phaser.Scene {
 
   createSlot(x, y, egg, index) {
     const panel = createPanel(this, x, y, 118, 142, {
+      ...PANEL,
       depth: 5,
       alpha: egg ? 0.98 : 0.72,
     });
     this.dynamicItems.push(panel);
 
-    const label = createBitmapLabel(this, x, y + 52, egg ? egg.rarity || "egg" : "empty", {
-      size: SMALL_FONT_SIZE,
-      tint: egg ? 0xf7ffe8 : 0x386341,
+    const slotIcon = this.add
+      .image(x, y - 44, "icons", egg ? "icon-star" : "icon-circle")
+      .setScale(1.05)
+      .setDepth(7)
+      .setAlpha(egg ? 1 : 0.45);
+    this.dynamicItems.push(slotIcon);
+
+    const label = createBitmapLabel(this, x, y + 52, egg ? (egg.rarity || "EGG").toUpperCase() : "EMPTY", {
+      font: UI_FONT,
+      size: 18,
+      tint: egg ? this.getRarityTint(egg.rarity) : 0x9aa9b8,
     }).setDepth(7);
     this.dynamicItems.push(label);
 
@@ -128,12 +205,14 @@ export class HatcheryScene extends Phaser.Scene {
       .setDepth(7);
     this.dynamicItems.push(eggSprite);
 
-    const discard = createButton(this, x, y + 94, 112, 34, "discard", () => {
+    const discard = createButton(this, x, y + 94, 40, 34, "", () => {
       GameState.hatchery.discardEgg(index);
       this.refreshEggs();
     }, {
+      ...iconButtonStyle("red", "icon-delete", {
+        iconSize: 18,
+      }),
       depth: 8,
-      fontSize: SMALL_FONT_SIZE,
     });
     this.dynamicItems.push(discard);
   }
@@ -145,14 +224,14 @@ export class HatcheryScene extends Phaser.Scene {
 
   hatchEgg() {
     if (!GameState.hatchery.pendingEgg) {
-      setBitmapLabelText(this.messageText, "no-eggs");
+      setBitmapLabelText(this.messageText, "NO EGGS", UI_FONT);
       return;
     }
 
     const digimonKey = GameState.hatchery.hatchPendingEgg();
     if (!digimonKey) {
       this.refreshEggs();
-      setBitmapLabelText(this.messageText, "all-unlocked");
+      setBitmapLabelText(this.messageText, "ALL UNLOCKED", UI_FONT);
       return;
     }
 
@@ -173,10 +252,10 @@ export class HatcheryScene extends Phaser.Scene {
       .setVisible(true)
       .setScale(1.25)
       .play(animKey, true);
-    setBitmapLabelText(this.resultNameText, this.formatName(digimonKey));
+    setBitmapLabelText(this.resultNameText, this.formatName(digimonKey), UI_FONT);
     this.resultNameText.setVisible(true);
     this.hatchButton.setAlpha(0.35);
-    setBitmapLabelText(this.messageText, "unlocked");
+    setBitmapLabelText(this.messageText, "UNLOCKED", UI_FONT);
 
     this.cameras.main.flash(220, 255, 245, 180);
     this.cameras.main.shake(180, 0.006);
@@ -188,6 +267,13 @@ export class HatcheryScene extends Phaser.Scene {
   formatName(key) {
     return key
       .replace(/([a-z])([A-Z])/g, "$1-$2")
-      .toLowerCase();
+      .replace(/-/g, " ")
+      .toUpperCase();
+  }
+
+  getRarityTint(rarity) {
+    if (rarity === "epic") return 0xffdf72;
+    if (rarity === "rare") return 0x9fd8ff;
+    return 0x9dffb2;
   }
 }

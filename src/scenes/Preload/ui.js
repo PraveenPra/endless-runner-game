@@ -1,5 +1,6 @@
 export function loadUI(scene) {
   scene.load.atlas("ui", "assets/ui/ui.png", "assets/ui/ui.json");
+  scene.load.atlas("icons", "assets/ui/icons.png", "assets/ui/icons.json");
 
   scene.load.atlas(
     "simple-buttons",

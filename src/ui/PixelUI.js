@@ -14,7 +14,9 @@ export function createPanel(scene, x, y, width, height, options = {}) {
 
 export function createButton(scene, x, y, width, height, label, onClick, options = {}) {
   const createButtonFrame =
-    options.layout === "horizontal"
+    options.layout === "single"
+      ? createSingleSlice
+      : options.layout === "horizontal"
       ? createHorizontalSlice
       : createNineSlice;
   const container = createButtonFrame(scene, x, y, width, height, {
@@ -25,12 +27,24 @@ export function createButton(scene, x, y, width, height, label, onClick, options
     alpha: options.alpha ?? 1,
   });
 
-  const text = createBitmapLabel(scene, 0, 1, label, {
-    font: options.font || "smallFont",
-    size: options.fontSize || SMALL_FONT_SIZE,
-    tint: options.tint ?? 0x17301b,
-  });
-  container.add(text);
+  if (options.icon) {
+    const icon = scene.add
+      .image(options.iconX ?? (label ? -width / 2 + 25 : 0), options.iconY ?? 0, options.iconAtlas || "icons", options.icon)
+      .setDisplaySize(options.iconSize || 22, options.iconSize || 22);
+    if (options.iconTint !== undefined) {
+      icon.setTint(options.iconTint);
+    }
+    container.add(icon);
+  }
+
+  if (label) {
+    const text = createBitmapLabel(scene, options.textX ?? (options.icon ? 12 : 0), options.textY ?? 1, label, {
+      font: options.font || "smallFont",
+      size: options.fontSize || SMALL_FONT_SIZE,
+      tint: options.tint ?? 0x17301b,
+    });
+    container.add(text);
+  }
 
   const hitArea = scene.add
     .zone(0, 0, width, height)
@@ -179,6 +193,20 @@ function createHorizontalSlice(scene, x, y, width, height, config) {
       .setDisplaySize(Math.ceil(pieceWidth), Math.ceil(pieceHeight));
     container.add(image);
   });
+
+  return container;
+}
+
+function createSingleSlice(scene, x, y, width, height, config) {
+  const { atlas, prefix, depth, alpha } = config;
+  const container = scene.add.container(Math.round(x), Math.round(y));
+  container.setDepth(depth);
+  container.setAlpha(alpha);
+
+  const image = scene.add
+    .image(0, 0, atlas, `${prefix}-single`)
+    .setDisplaySize(Math.ceil(width), Math.ceil(height));
+  container.add(image);
 
   return container;
 }
