@@ -2,6 +2,18 @@ export function loadUI(scene) {
   scene.load.atlas("ui", "assets/ui/ui.png", "assets/ui/ui.json");
 
   scene.load.atlas(
+    "simple-buttons",
+    "assets/ui/simple-buttons.png",
+    "assets/ui/simple-buttons.json",
+  );
+
+  scene.load.atlas(
+    "panel-blue",
+    "assets/ui/panel-blue.png",
+    "assets/ui/panel-blue.json",
+  );
+
+  scene.load.atlas(
     "mobile-buttons",
     "assets/ui/mobile-buttons.png",
     "assets/ui/mobile-buttons.json",
@@ -17,5 +29,11 @@ export function loadUI(scene) {
     "smallFont",
     "assets/ui/fonts/Small-font1.png",
     "assets/ui/fonts/Small-font1.xml",
+  );
+
+  scene.load.bitmapFont(
+    "allFont",
+    "assets/ui/fonts/All-font1.png",
+    "assets/ui/fonts/All-font1.xml",
   );
 }

@@ -4,7 +4,7 @@ export const SMALL_FONT_SIZE = 50;
 
 export function createPanel(scene, x, y, width, height, options = {}) {
   return createNineSlice(scene, x, y, width, height, {
-    atlas: "ui",
+    atlas: options.atlas || "ui",
     prefix: options.prefix || "panel-green",
     slice: options.slice || PANEL_SLICE,
     depth: options.depth || 0,
@@ -13,8 +13,12 @@ export function createPanel(scene, x, y, width, height, options = {}) {
 }
 
 export function createButton(scene, x, y, width, height, label, onClick, options = {}) {
-  const container = createNineSlice(scene, x, y, width, height, {
-    atlas: "ui",
+  const createButtonFrame =
+    options.layout === "horizontal"
+      ? createHorizontalSlice
+      : createNineSlice;
+  const container = createButtonFrame(scene, x, y, width, height, {
+    atlas: options.atlas || "ui",
     prefix: options.prefix || "button-green",
     slice: options.slice || BUTTON_SLICE,
     depth: options.depth || 0,
@@ -137,6 +141,35 @@ function createNineSlice(scene, x, y, width, height, config) {
     [left, bottom - overlap, `${prefix}-bottom-left`, slice + overlap, slice + overlap],
     [left + slice - overlap, bottom - overlap, `${prefix}-bottom`, innerWidth + overlap * 2, slice + overlap],
     [right - overlap, bottom - overlap, `${prefix}-bottom-right`, slice + overlap, slice + overlap],
+  ];
+
+  pieces.forEach(([pieceX, pieceY, frame, pieceWidth, pieceHeight]) => {
+    const image = scene.add
+      .image(Math.round(pieceX), Math.round(pieceY), atlas, frame)
+      .setOrigin(0, 0)
+      .setDisplaySize(Math.ceil(pieceWidth), Math.ceil(pieceHeight));
+    container.add(image);
+  });
+
+  return container;
+}
+
+function createHorizontalSlice(scene, x, y, width, height, config) {
+  const { atlas, prefix, slice, depth, alpha } = config;
+  const container = scene.add.container(Math.round(x), Math.round(y));
+  container.setDepth(depth);
+  container.setAlpha(alpha);
+
+  const overlap = config.overlap ?? 4;
+  const innerWidth = Math.max(1, width - slice * 2);
+  const left = -width / 2;
+  const right = width / 2 - slice;
+  const top = -height / 2;
+
+  const pieces = [
+    [left, top, `${prefix}-left`, slice + overlap, height],
+    [left + slice - overlap, top, `${prefix}-center`, innerWidth + overlap * 2, height],
+    [right - overlap, top, `${prefix}-right`, slice + overlap, height],
   ];
 
   pieces.forEach(([pieceX, pieceY, frame, pieceWidth, pieceHeight]) => {

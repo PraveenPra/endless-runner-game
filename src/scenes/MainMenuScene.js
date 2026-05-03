@@ -2,6 +2,22 @@ import { GameState } from "../GameState.js";
 import { getMapConfig } from "../config/maps.js";
 import { createBitmapLabel, createButton, createPanel } from "../ui/PixelUI.js";
 
+const MAIN_MENU_FONT = "allFont";
+const MAIN_MENU_PANEL = {
+  atlas: "panel-blue",
+  prefix: "panel-blue",
+  slice: 32,
+};
+const MAIN_MENU_BUTTON = {
+  atlas: "simple-buttons",
+  prefix: "button-lime-v",
+  layout: "horizontal",
+  slice: 32,
+  font: MAIN_MENU_FONT,
+  fontSize: 28,
+  tint: 0x17301b,
+};
+
 export class MainMenuScene extends Phaser.Scene {
   constructor() {
     super("MainMenuScene");
@@ -42,45 +58,47 @@ export class MainMenuScene extends Phaser.Scene {
 
   createShell(width, height) {
     createPanel(this, width / 2, height / 2 + 18, 520, 400, {
+      ...MAIN_MENU_PANEL,
       depth: 5,
       alpha: 0.96,
     });
 
     createPanel(this, width / 2, 92, 620, 108, {
+      ...MAIN_MENU_PANEL,
       depth: 6,
       alpha: 0.96,
     });
 
     createBitmapLabel(this, width / 2, 72, "DIGIMON", {
-      font: "bigFont",
-      size: 50,
+      font: MAIN_MENU_FONT,
+      size: 46,
       tint: 0xf7ffe8,
     }).setDepth(8);
 
-    createBitmapLabel(this, width / 2, 119, "endless-runner", {
-      font: "smallFont",
-      size: 52,
-      tint: 0x244b2a,
+    createBitmapLabel(this, width / 2, 119, "ENDLESS RUNNER", {
+      font: MAIN_MENU_FONT,
+      size: 26,
+      tint: 0x9fd8ff,
     }).setDepth(8);
 
     const map = getMapConfig(GameState.selectedMapKey);
-    createBitmapLabel(this, width / 2, 181, `map:${map.name}`, {
-      font: "smallFont",
-      size: 50,
+    createBitmapLabel(this, width / 2, 181, `MAP: ${map.name.toUpperCase()}`, {
+      font: MAIN_MENU_FONT,
+      size: 26,
       tint: 0xf7ffe8,
     }).setDepth(8);
 
     const buttons = [
-      ["start-game", () => this.scene.start("MapSelectScene")],
-      ["character", () => this.scene.start("CharacterSelect")],
-      ["hatchery", () => this.scene.start("HatcheryScene")],
-      ["shop", () => this.scene.start("ShopScene")],
+      ["START GAME", () => this.scene.start("MapSelectScene")],
+      ["CHARACTER", () => this.scene.start("CharacterSelect")],
+      ["HATCHERY", () => this.scene.start("HatcheryScene")],
+      ["SHOP", () => this.scene.start("ShopScene")],
     ];
 
     buttons.forEach(([label, onClick], index) => {
       createButton(this, width / 2, 236 + index * 58, 300, 42, label, onClick, {
+        ...MAIN_MENU_BUTTON,
         depth: 10,
-        fontSize: 50,
       });
     });
 
@@ -89,15 +107,16 @@ export class MainMenuScene extends Phaser.Scene {
 
   createStatusBar(width, height) {
     createPanel(this, width / 2, height - 34, 700, 48, {
+      ...MAIN_MENU_PANEL,
       depth: 6,
       alpha: 0.94,
     });
 
     const stats = [
-      `coins:${GameState.currency.coins}`,
-      `gems:${GameState.currency.gems}`,
-      `eggs:${GameState.hatchery.eggs.length}/${GameState.hatchery.capacity}`,
-      `best:${GameState.highScore}`,
+      `COINS: ${GameState.currency.coins}`,
+      `GEMS: ${GameState.currency.gems}`,
+      `EGGS: ${GameState.hatchery.eggs.length}/${GameState.hatchery.capacity}`,
+      `BEST: ${GameState.highScore}`,
     ];
 
     stats.forEach((stat, index) => {
@@ -107,8 +126,8 @@ export class MainMenuScene extends Phaser.Scene {
         height - 34,
         stat,
         {
-          font: "smallFont",
-          size: 50,
+          font: MAIN_MENU_FONT,
+          size: 22,
           tint: 0xf7ffe8,
         },
       ).setDepth(8);
