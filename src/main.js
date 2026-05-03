@@ -5,6 +5,7 @@ import { MapSelectScene } from "./scenes/MapSelectScene.js";
 import { CharacterSelect } from "./scenes/CharacterSelect.js";
 import { HatcheryScene } from "./scenes/HatcheryScene.js";
 import { ShopScene } from "./scenes/ShopScene.js";
+import { CreditsScene } from "./scenes/CreditsScene.js";
 import { EditBodyScene } from "./scenes/EditBodyScene.js";
 import { EditProjectileScene } from "./scenes/EditProjectileScene.js";
 
@@ -29,6 +30,7 @@ const config = {
     MapSelectScene,
     ShopScene,
     HatcheryScene,
+    CreditsScene,
     CharacterSelect,
     EditBodyScene,
     EditProjectileScene,

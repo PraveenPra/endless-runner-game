@@ -102,10 +102,11 @@ export class MainMenuScene extends Phaser.Scene {
       ["CHARACTER", "yellow", "icon-login", () => this.scene.start("CharacterSelect")],
       ["HATCHERY", "gray", "icon-key", () => this.scene.start("HatcheryScene")],
       ["SHOP", "red", "icon-diamond", () => this.scene.start("ShopScene")],
+      ["CREDITS", "gray", "icon-star", () => this.scene.start("CreditsScene")],
     ];
 
     buttons.forEach(([label, color, icon, onClick], index) => {
-      createButton(this, width / 2, 236 + index * 58, 300, 42, label, onClick, {
+      createButton(this, width / 2, 226 + index * 50, 300, 42, label, onClick, {
         ...buttonStyle(color, {
           icon,
           iconSize: 18,
