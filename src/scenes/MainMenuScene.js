@@ -10,13 +10,20 @@ const MAIN_MENU_PANEL = {
 };
 const MAIN_MENU_BUTTON = {
   atlas: "simple-buttons",
-  prefix: "button-lime-v",
   layout: "horizontal",
   slice: 32,
   font: MAIN_MENU_FONT,
-  fontSize: 28,
+  fontSize: 25,
   tint: 0x17301b,
 };
+
+function buttonStyle(color, options = {}) {
+  return {
+    ...MAIN_MENU_BUTTON,
+    prefix: `button-${color}-v`,
+    ...options,
+  };
+}
 
 export class MainMenuScene extends Phaser.Scene {
   constructor() {
@@ -69,11 +76,13 @@ export class MainMenuScene extends Phaser.Scene {
       alpha: 0.96,
     });
 
+    this.add.image(width / 2 - 124, 72, "icons", "icon-star").setScale(1.55).setDepth(8);
     createBitmapLabel(this, width / 2, 72, "DIGIMON", {
       font: MAIN_MENU_FONT,
       size: 46,
       tint: 0xf7ffe8,
     }).setDepth(8);
+    this.add.image(width / 2 + 124, 72, "icons", "icon-star").setScale(1.55).setDepth(8);
 
     createBitmapLabel(this, width / 2, 119, "ENDLESS RUNNER", {
       font: MAIN_MENU_FONT,
@@ -89,15 +98,19 @@ export class MainMenuScene extends Phaser.Scene {
     }).setDepth(8);
 
     const buttons = [
-      ["START GAME", () => this.scene.start("MapSelectScene")],
-      ["CHARACTER", () => this.scene.start("CharacterSelect")],
-      ["HATCHERY", () => this.scene.start("HatcheryScene")],
-      ["SHOP", () => this.scene.start("ShopScene")],
+      ["START GAME", "lime", "icon-right-arrow", () => this.scene.start("MapSelectScene")],
+      ["CHARACTER", "yellow", "icon-login", () => this.scene.start("CharacterSelect")],
+      ["HATCHERY", "gray", "icon-key", () => this.scene.start("HatcheryScene")],
+      ["SHOP", "red", "icon-diamond", () => this.scene.start("ShopScene")],
     ];
 
-    buttons.forEach(([label, onClick], index) => {
+    buttons.forEach(([label, color, icon, onClick], index) => {
       createButton(this, width / 2, 236 + index * 58, 300, 42, label, onClick, {
-        ...MAIN_MENU_BUTTON,
+        ...buttonStyle(color, {
+          icon,
+          iconSize: 18,
+          textX: 16,
+        }),
         depth: 10,
       });
     });

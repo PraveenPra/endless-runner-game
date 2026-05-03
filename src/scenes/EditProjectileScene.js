@@ -2,6 +2,50 @@ import { GameState } from "../GameState.js";
 import { createAnimations } from "../systems/AnimationFactory.js";
 import { resolveProfile } from "../entities/digimon/resolveProfile.js";
 import * as DIGIMON_PROFILES from "../entities/digimon/DigimonProfiles/index.js";
+import {
+  createBitmapLabel,
+  createButton,
+  createPanel,
+  setBitmapLabelText,
+} from "../ui/PixelUI.js";
+
+const UI_FONT = "allFont";
+const PANEL = {
+  atlas: "panel-blue",
+  prefix: "panel-blue",
+  slice: 32,
+};
+const BUTTON_BASE = {
+  atlas: "simple-buttons",
+  layout: "horizontal",
+  slice: 32,
+  font: UI_FONT,
+  fontSize: 20,
+  tint: 0x162032,
+};
+const ICON_BUTTON_BASE = {
+  atlas: "simple-buttons",
+  layout: "single",
+  slice: 32,
+};
+
+function buttonStyle(color, options = {}) {
+  return {
+    ...BUTTON_BASE,
+    prefix: `button-${color}-v`,
+    ...options,
+  };
+}
+
+function iconButtonStyle(color, icon, options = {}) {
+  return {
+    ...ICON_BUTTON_BASE,
+    prefix: `button-${color}`,
+    icon,
+    iconSize: 18,
+    ...options,
+  };
+}
 
 export class EditProjectileScene extends Phaser.Scene {
   constructor() {
@@ -31,6 +75,10 @@ export class EditProjectileScene extends Phaser.Scene {
       reset: Phaser.Input.Keyboard.KeyCodes.R,
       escape: Phaser.Input.Keyboard.KeyCodes.ESC,
     });
+    this.adjustHoldDelay = 220;
+    this.adjustHoldInterval = 85;
+    this.nextAdjustAt = 0;
+    this.activeAdjustDirection = 0;
 
     this.createLayout();
 
@@ -56,53 +104,53 @@ export class EditProjectileScene extends Phaser.Scene {
   }
 
   createLayout() {
-    this.add.rectangle(480, 272, 960, 544, 0x10141c);
-    this.add.rectangle(480, 58, 960, 116, 0x171d29);
+    this.add.rectangle(480, 272, 960, 544, 0x08111f);
+    createPanel(this, 480, 54, 720, 88, { ...PANEL, depth: 2, alpha: 0.96 });
+    this.add.image(190, 36, "icons", "icon-circle").setScale(1.35).setDepth(6);
 
-    this.add
-      .text(480, 28, `EDIT PROJECTILES: ${this.digimon.toUpperCase()}`, {
-        fontSize: "24px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+    createBitmapLabel(this, 480, 36, `EDIT PROJECTILES: ${this.formatDigimonName(this.digimon)}`, {
+      font: UI_FONT,
+      size: 27,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
-    this.add
-      .text(480, 58, "Offsets are measured from the red body box top-left", {
-        fontSize: "12px",
-        color: "#aeb8c8",
-      })
-      .setOrigin(0.5);
+    createBitmapLabel(this, 480, 66, "OFFSETS MEASURE FROM RED BODY BOX", {
+      font: UI_FONT,
+      size: 18,
+      tint: 0x9fd8ff,
+    }).setDepth(6);
   }
 
   createEmptyState() {
-    this.add
-      .text(480, 250, "No projectile attacks found for this Digimon.", {
-        fontSize: "18px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+    createPanel(this, 480, 270, 560, 150, { ...PANEL, depth: 3, alpha: 0.94 });
+    this.add.image(310, 248, "icons", "icon-dialog").setScale(1.4).setDepth(6);
+    createBitmapLabel(this, 500, 248, "NO PROJECTILE ATTACKS FOUND", {
+      font: UI_FONT,
+      size: 22,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
-    this.add
-      .text(480, 292, "Add a projectile attack in its profile to edit offsets here.", {
-        fontSize: "13px",
-        color: "#aeb8c8",
-      })
-      .setOrigin(0.5);
+    createBitmapLabel(this, 480, 292, "ADD A PROJECTILE ATTACK TO EDIT OFFSETS", {
+      font: UI_FONT,
+      size: 17,
+      tint: 0x9aa9b8,
+    }).setDepth(6);
 
     this.createBackButton(480, 500);
   }
 
   createPreview() {
-    this.previewX = 310;
-    this.groundY = 335;
+    this.previewX = 285;
+    this.groundY = 345;
 
-    this.add.rectangle(310, 338, 420, 4, 0x566070);
-    this.add
-      .text(310, 124, "BODY-RELATIVE SPAWN PREVIEW", {
-        fontSize: "14px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+    createPanel(this, 300, 302, 500, 342, { ...PANEL, depth: 2, alpha: 0.9 });
+    const ground = this.add.rectangle(300, this.groundY, 430, 4, 0x566070);
+    ground.setDepth(7);
+    createBitmapLabel(this, 300, 144, "BODY-RELATIVE SPAWN PREVIEW", {
+      font: UI_FONT,
+      size: 18,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
     this.sprite = this.physics.add.sprite(
       this.previewX,
@@ -110,27 +158,31 @@ export class EditProjectileScene extends Phaser.Scene {
       this.digimon,
     );
     this.sprite.setOrigin(0.5, 1);
+    this.sprite.setDepth(8);
     this.sprite.body.setAllowGravity(false);
     this.sprite.body.moves = false;
 
     this.bodyBox = this.add.rectangle(0, 0, 1, 1, 0xff3b30, 0.22);
     this.bodyBox.setOrigin(0, 0);
     this.bodyBox.setStrokeStyle(2, 0xff3b30);
+    this.bodyBox.setDepth(9);
 
     this.spawnMarker = this.add.circle(0, 0, 5, 0x35d0ff, 1);
     this.spawnMarker.setStrokeStyle(2, 0xffffff);
+    this.spawnMarker.setDepth(11);
     this.spawnLine = this.add.line(0, 0, 0, 0, 56, 0, 0x35d0ff, 0.8);
     this.spawnLine.setOrigin(0, 0.5);
+    this.spawnLine.setDepth(10);
 
     this.projectilePreview = this.add.sprite(0, 0, "fireball");
     this.projectilePreview.setOrigin(0.5);
+    this.projectilePreview.setDepth(12);
 
-    this.frameText = this.add
-      .text(310, 370, "", {
-        fontSize: "13px",
-        color: "#dce6f5",
-      })
-      .setOrigin(0.5);
+    this.frameText = createBitmapLabel(this, 300, 392, "", {
+      font: UI_FONT,
+      size: 16,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
   }
 
   createAttackTabs() {
@@ -138,19 +190,24 @@ export class EditProjectileScene extends Phaser.Scene {
     const startX = 480 - (this.attacks.length - 1) * 54;
 
     this.attacks.forEach(({ key }, index) => {
-      const tab = this.add
-        .text(startX + index * 108, 88, this.formatAttackName(key), {
-          fontSize: "14px",
-          color: "#dce6f5",
-          backgroundColor: "#263145",
-          padding: { x: 12, y: 7 },
-        })
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .on("pointerdown", () => {
+      const tab = createButton(
+        this,
+        startX + index * 108,
+        106,
+        100,
+        34,
+        this.formatAttackName(key),
+        () => {
           this.attackIndex = index;
           this.updateSelection();
-        });
+        },
+        {
+          ...buttonStyle("gray", {
+            fontSize: 16,
+          }),
+          depth: 7,
+        },
+      );
 
       this.attackTabTexts.push(tab);
     });
@@ -165,117 +222,125 @@ export class EditProjectileScene extends Phaser.Scene {
 
     this.valueLabels = {};
     this.paramRows = [];
-    const startX = 630;
-    const startY = 185;
+    const startX = 600;
+    const startY = 188;
 
-    this.add
-      .text(startX, 128, "SPAWN POSITION", {
-        fontSize: "14px",
-        color: "#ffffff",
-      })
-      .setOrigin(0, 0.5);
+    createPanel(this, 735, 302, 390, 342, { ...PANEL, depth: 2, alpha: 0.94 });
+    this.add.image(startX - 20, 144, "icons", "icon-fine-tune").setScale(1).setDepth(6);
+    createBitmapLabel(this, startX + 12, 144, "SPAWN POSITION", {
+      font: UI_FONT,
+      size: 18,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(6);
 
-    this.attackInfoText = this.add.text(startX, 150, "", {
-      fontSize: "12px",
-      color: "#aeb8c8",
-    });
+    this.attackInfoText = createBitmapLabel(this, startX, 166, "", {
+      font: UI_FONT,
+      size: 14,
+      tint: 0x9aa9b8,
+      originX: 0,
+    }).setDepth(6);
 
     this.paramConfig.forEach((param, index) => {
       const y = startY + index * 58;
-      const row = this.add.rectangle(startX + 105, y, 270, 40, 0x1d2636, 0.9);
+      const row = this.add.rectangle(startX + 122, y, 305, 40, 0x1d2636, 0.9);
       row.setStrokeStyle(1, 0x2f3b52);
       this.paramRows.push(row);
 
-      this.add.text(startX, y, param.name, {
-        fontSize: "15px",
-        color: "#ffffff",
-      }).setOrigin(0, 0.5);
+      createBitmapLabel(this, startX, y, param.name.toUpperCase(), {
+        font: UI_FONT,
+        size: 17,
+        tint: 0xf7ffe8,
+        originX: 0,
+      }).setDepth(6);
 
-      this.valueLabels[param.key] = this.add
-        .text(startX + 142, y, "0", {
-          fontSize: "16px",
-          color: "#35d0ff",
-        })
-        .setOrigin(0.5);
+      this.valueLabels[param.key] = createBitmapLabel(this, startX + 160, y, "0", {
+        font: UI_FONT,
+        size: 18,
+        tint: 0x9fd8ff,
+      }).setDepth(6);
 
-      this.createAdjustButton(startX + 205, y, "-", () =>
+      this.createAdjustButton(startX + 238, y, "-", () =>
         this.adjustParam(index, -1),
       );
-      this.createAdjustButton(startX + 245, y, "+", () =>
+      this.createAdjustButton(startX + 282, y, "+", () =>
         this.adjustParam(index, 1),
       );
     });
 
-    this.add
-      .text(
-        startX,
-        372,
-        "A/D attack  |  Up/Down field  |  Left/Right adjust  |  Q/E frame",
-        {
-          fontSize: "11px",
-          color: "#7f8da3",
-        },
-      )
-      .setOrigin(0, 0.5);
+    createBitmapLabel(this, 735, 374, "A/D ATTACK   UP/DOWN FIELD", {
+      font: UI_FONT,
+      size: 14,
+      tint: 0x9aa9b8,
+    }).setDepth(6);
+    createBitmapLabel(this, 735, 396, "LEFT/RIGHT OR HOLD +/- TO ADJUST", {
+      font: UI_FONT,
+      size: 14,
+      tint: 0x9aa9b8,
+    }).setDepth(6);
 
-    this.createAdjustButton(startX + 46, 330, "PREV FRAME", () =>
+    this.createAdjustButton(startX + 56, 332, "PREV", () =>
       this.adjustFireFrame(-1),
     );
-    this.createAdjustButton(startX + 184, 330, "NEXT FRAME", () =>
+    this.createAdjustButton(startX + 190, 332, "NEXT", () =>
       this.adjustFireFrame(1),
     );
   }
 
   createAdjustButton(x, y, label, onClick) {
-    return this.add
-      .text(x, y, label, {
-        fontSize: "18px",
-        color: "#ffffff",
-        backgroundColor: "#33425c",
-        padding: { x: 11, y: 4 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", onClick);
+    const isIcon = label === "-" || label === "+";
+    if (isIcon) {
+      return createButton(this, x, y, 34, 32, "", onClick, {
+        ...iconButtonStyle("yellow", label === "+" ? "icon-plus" : "icon-minus", {
+          iconSize: 17,
+        }),
+        repeat: true,
+        repeatDelay: 85,
+        depth: 8,
+      });
+    }
+
+    return createButton(this, x, y, 96, 34, label, onClick, {
+      ...buttonStyle("yellow", {
+        fontSize: 17,
+      }),
+      depth: 8,
+    });
   }
 
   createButtons() {
-    this.createBackButton(300, 500);
+    this.createBackButton(320, 508);
 
-    this.add
-      .text(450, 500, "RESET ATTACK", {
-        fontSize: "15px",
-        color: "#ffffff",
-        backgroundColor: "#333333",
-        padding: { x: 14, y: 8 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.resetCurrentAttack());
+    createButton(this, 500, 508, 176, 42, "RESET ATTACK", () => this.resetCurrentAttack(), {
+      ...buttonStyle("red", {
+        icon: "icon-multiply",
+        iconSize: 18,
+        textX: 16,
+        fontSize: 18,
+      }),
+      depth: 8,
+    });
 
-    this.add
-      .text(620, 500, "SAVE OFFSETS", {
-        fontSize: "15px",
-        color: "#001014",
-        backgroundColor: "#35d0ff",
-        padding: { x: 14, y: 8 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.save());
+    createButton(this, 690, 508, 168, 42, "SAVE OFFSETS", () => this.save(), {
+      ...buttonStyle("lime", {
+        icon: "icon-tick",
+        iconSize: 18,
+        textX: 16,
+        fontSize: 18,
+      }),
+      depth: 8,
+    });
   }
 
   createBackButton(x, y) {
-    return this.add
-      .text(x, y, "BACK", {
-        fontSize: "15px",
-        color: "#ffffff",
-        backgroundColor: "#333333",
-        padding: { x: 16, y: 8 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.back());
+    return createButton(this, x, y, 128, 42, "BACK", () => this.back(), {
+      ...buttonStyle("gray", {
+        icon: "icon-left-arrow",
+        iconSize: 18,
+        textX: 14,
+      }),
+      depth: 8,
+    });
   }
 
   formatAttackName(key) {
@@ -292,10 +357,9 @@ export class EditProjectileScene extends Phaser.Scene {
     if (!entry) return;
 
     this.attackTabTexts.forEach((tab, index) => {
-      tab.setStyle({
-        color: index === this.attackIndex ? "#001014" : "#dce6f5",
-        backgroundColor: index === this.attackIndex ? "#35d0ff" : "#263145",
-      });
+      const selected = index === this.attackIndex;
+      tab.setAlpha(selected ? 1 : 0.62);
+      tab.setScale(selected ? 1.06 : 1);
     });
 
     this.paramRows.forEach((row, index) => {
@@ -343,10 +407,14 @@ export class EditProjectileScene extends Phaser.Scene {
     this.valueLabels.offsetY.setText(String(projectile.offsetY ?? 0));
     this.valueLabels.fireFrame.setText(String(entry.attack.fireFrame ?? 1));
 
-    this.attackInfoText.setText(
-      `${this.formatAttackName(entry.key)}  anim: ${entry.attack.anim || "-"}  projectile: ${
+    setBitmapLabelText(
+      this.attackInfoText,
+      `${this.formatAttackName(entry.key)}  ANIM: ${this.cleanInfo(entry.attack.anim)}  VFX: ${
+        this.cleanInfo(
         projectile.anim || projectile.texture || "-"
+        )
       }`,
+      UI_FONT,
     );
   }
 
@@ -435,9 +503,9 @@ export class EditProjectileScene extends Phaser.Scene {
     if (frameName) {
       this.sprite.anims.stop();
       this.sprite.setTexture(this.digimon, frameName);
-      this.frameText.setText(`Attack frame ${frameIndex + 1}/${frameNames.length}`);
+      setBitmapLabelText(this.frameText, `ATTACK FRAME ${frameIndex + 1}/${frameNames.length}`, UI_FONT);
     } else {
-      this.frameText.setText("Attack frame unavailable");
+      setBitmapLabelText(this.frameText, "ATTACK FRAME UNAVAILABLE", UI_FONT);
     }
   }
 
@@ -450,7 +518,7 @@ export class EditProjectileScene extends Phaser.Scene {
     entry.attack.projectile.offsetY = baseEntry.attack.projectile.offsetY ?? 0;
     entry.attack.fireFrame = baseEntry.attack.fireFrame ?? 1;
     this.updateSelection();
-    this.showMessage("Attack spawn data reset", "#ffff00");
+    this.showMessage("ATTACK SPAWN DATA RESET", 0xffdf72);
   }
 
   save() {
@@ -467,24 +535,36 @@ export class EditProjectileScene extends Phaser.Scene {
       `digimon_${this.digimon}_projectiles`,
       JSON.stringify(saved),
     );
-    this.showMessage("Projectile spawn data saved", "#35d0ff");
+    this.showMessage("PROJECTILE SPAWN DATA SAVED", 0x9dffb2);
   }
 
   back() {
     this.scene.start("CharacterSelect");
   }
 
-  showMessage(text, color = "#ffffff") {
+  showMessage(text, tint = 0xf7ffe8) {
     if (this.msg) this.msg.destroy();
-    this.msg = this.add
-      .text(480, 458, text, {
-        fontSize: "15px",
-        color,
-      })
-      .setOrigin(0.5);
+    this.msg = createBitmapLabel(this, 480, 458, text.toUpperCase(), {
+      font: UI_FONT,
+      size: 20,
+      tint,
+    }).setDepth(9);
     this.time.delayedCall(1400, () => {
       if (this.msg) this.msg.destroy();
     });
+  }
+
+  formatDigimonName(key) {
+    return key
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/-/g, " ")
+      .toUpperCase();
+  }
+
+  cleanInfo(value) {
+    return String(value || "-")
+      .replace(/[_-]/g, " ")
+      .toUpperCase();
   }
 
   getExistingTextureKey(key) {
@@ -541,12 +621,50 @@ export class EditProjectileScene extends Phaser.Scene {
       this.updateSelection();
     }
 
+    this.handleAdjustInput();
+  }
+
+  handleAdjustInput() {
+    const now = this.time.now;
+    const leftDown = this.cursors.left.isDown;
+    const rightDown = this.cursors.right.isDown;
+
     if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
       this.adjustParam(this.paramIndex, -1);
+      this.activeAdjustDirection = -1;
+      this.nextAdjustAt = now + this.adjustHoldDelay;
+      return;
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
       this.adjustParam(this.paramIndex, 1);
+      this.activeAdjustDirection = 1;
+      this.nextAdjustAt = now + this.adjustHoldDelay;
+      return;
     }
+
+    if (leftDown && !rightDown) {
+      if (this.activeAdjustDirection !== -1) {
+        this.activeAdjustDirection = -1;
+        this.nextAdjustAt = now + this.adjustHoldDelay;
+      } else if (now >= this.nextAdjustAt) {
+        this.adjustParam(this.paramIndex, -1);
+        this.nextAdjustAt = now + this.adjustHoldInterval;
+      }
+      return;
+    }
+
+    if (rightDown && !leftDown) {
+      if (this.activeAdjustDirection !== 1) {
+        this.activeAdjustDirection = 1;
+        this.nextAdjustAt = now + this.adjustHoldDelay;
+      } else if (now >= this.nextAdjustAt) {
+        this.adjustParam(this.paramIndex, 1);
+        this.nextAdjustAt = now + this.adjustHoldInterval;
+      }
+      return;
+    }
+
+    this.activeAdjustDirection = 0;
   }
 }

@@ -1,6 +1,49 @@
 import { GameState } from "../GameState.js";
 import { createAnimations } from "../systems/AnimationFactory.js";
 import { resolveProfile } from "../entities/digimon/resolveProfile.js";
+import {
+  createBitmapLabel,
+  createButton,
+  createPanel,
+} from "../ui/PixelUI.js";
+
+const UI_FONT = "allFont";
+const PANEL = {
+  atlas: "panel-blue",
+  prefix: "panel-blue",
+  slice: 32,
+};
+const BUTTON_BASE = {
+  atlas: "simple-buttons",
+  layout: "horizontal",
+  slice: 32,
+  font: UI_FONT,
+  fontSize: 22,
+  tint: 0x162032,
+};
+const ICON_BUTTON_BASE = {
+  atlas: "simple-buttons",
+  layout: "single",
+  slice: 32,
+};
+
+function buttonStyle(color, options = {}) {
+  return {
+    ...BUTTON_BASE,
+    prefix: `button-${color}-v`,
+    ...options,
+  };
+}
+
+function iconButtonStyle(color, icon, options = {}) {
+  return {
+    ...ICON_BUTTON_BASE,
+    prefix: `button-${color}`,
+    icon,
+    iconSize: 18,
+    ...options,
+  };
+}
 
 export class EditBodyScene extends Phaser.Scene {
   constructor() {
@@ -24,23 +67,29 @@ export class EditBodyScene extends Phaser.Scene {
   }
 
   createVisuals() {
-    this.add
-      .text(480, 30, `EDIT BODY: ${this.digimon.toUpperCase()}`, {
-        fontSize: "24px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+    this.add.rectangle(480, 272, 960, 544, 0x08111f);
+    createPanel(this, 480, 54, 700, 88, { ...PANEL, depth: 3, alpha: 0.96 });
+    this.add.image(218, 38, "icons", "icon-fine-tune").setScale(1.35).setDepth(6);
+    createBitmapLabel(this, 480, 38, `EDIT BODY: ${this.formatName(this.digimon)}`, {
+      font: UI_FONT,
+      size: 28,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
 
-    this.add.text(480, 55, "Adjust body parameters to match sprite", {
-      fontSize: "12px",
-      color: "#aaaaaa",
-    }).setOrigin(0.5);
+    createBitmapLabel(this, 480, 68, "MATCH BODY BOX TO SPRITE", {
+      font: UI_FONT,
+      size: 18,
+      tint: 0x9fd8ff,
+    }).setDepth(6);
 
-    this.previewX = 250;
-    this.groundY = 250;
+    createPanel(this, 300, 285, 500, 330, { ...PANEL, depth: 2, alpha: 0.9 });
+
+    this.previewX = 285;
+    this.groundY = 335;
 
     this.sprite = this.physics.add.sprite(this.previewX, this.groundY, this.digimon);
     this.sprite.setOrigin(0.5, 1);
+    this.sprite.setDepth(8);
     this.sprite.body.setAllowGravity(false);
     this.sprite.body.moves = false;
     const idleKey = `${this.digimon}_idle`;
@@ -51,19 +100,36 @@ export class EditBodyScene extends Phaser.Scene {
     this.bodyBox = this.add.rectangle(this.previewX, this.groundY, this.body.width, this.body.height, 0xff0000, 0.3);
     this.bodyBox.setOrigin(0, 0);
     this.bodyBox.setStrokeStyle(2, 0xff0000);
+    this.bodyBox.setDepth(9);
 
-    this.add.text(250, 30, "SPRITE", { fontSize: "14px", color: "#ffffff" }).setOrigin(0.5);
-    this.add.text(450, 30, "HITBOX (red)", { fontSize: "14px", color: "#ff0000" }).setOrigin(0.5);
-
-    const ground = this.add.rectangle(350, this.groundY, 400, 4, 0x666666);
-    this.add.text(350, 265, "GROUND", { fontSize: "12px", color: "#666666" }).setOrigin(0.5);
+    createBitmapLabel(this, 300, 142, "SPRITE AND BODY BOX", {
+      font: UI_FONT,
+      size: 18,
+      tint: 0xf7ffe8,
+    }).setDepth(6);
+    const ground = this.add.rectangle(300, this.groundY, 430, 4, 0x566070);
+    ground.setDepth(7);
+    createBitmapLabel(this, 300, 354, "GROUND", {
+      font: UI_FONT,
+      size: 15,
+      tint: 0x9aa9b8,
+    }).setDepth(6);
   }
 
   createUI() {
     this.labels = {};
-    const startY = 320;
-    const startX = 180;
-    const spacing = 28;
+    const startY = 185;
+    const startX = 610;
+    const spacing = 48;
+
+    createPanel(this, 720, 300, 370, 330, { ...PANEL, depth: 2, alpha: 0.94 });
+    this.add.image(startX - 24, 132, "icons", "icon-fine-tune").setScale(1).setDepth(6);
+    createBitmapLabel(this, startX + 8, 132, "BODY PARAMETERS", {
+      font: UI_FONT,
+      size: 19,
+      tint: 0xf7ffe8,
+      originX: 0,
+    }).setDepth(6);
 
     const params = [
       { key: "width", name: "Width", min: 1, max: 100, step: 1 },
@@ -78,23 +144,43 @@ export class EditBodyScene extends Phaser.Scene {
     params.forEach((param, index) => {
       const y = startY + index * spacing;
 
-      this.add.text(startX - 70, y, param.name + ":", {
-        fontSize: "14px",
-        color: "#ffffff",
-      }).setOrigin(0, 0.5);
+      const row = this.add.rectangle(startX + 122, y, 305, 36, 0x1d2636, 0.86);
+      row.setStrokeStyle(1, 0x2f3b52);
+      row.setDepth(4);
 
-      const valueText = this.add.text(startX + 70, y, String(this.body[param.key]), {
-        fontSize: "14px",
-        color: "#ffff00",
-      }).setOrigin(0.5, 0.5);
+      createBitmapLabel(this, startX, y, `${param.name.toUpperCase()}:`, {
+        font: UI_FONT,
+        size: 16,
+        tint: 0xf7ffe8,
+        originX: 0,
+      }).setDepth(6);
+
+      const valueText = createBitmapLabel(this, startX + 160, y, String(this.body[param.key]), {
+        font: UI_FONT,
+        size: 17,
+        tint: 0xffdf72,
+      }).setDepth(6);
 
       this.labels[param.key] = valueText;
+
+      this.createAdjustButton(startX + 238, y, "-", () =>
+        this.adjustParam(index, -1),
+      );
+      this.createAdjustButton(startX + 282, y, "+", () =>
+        this.adjustParam(index, 1),
+      );
     });
 
-    this.add.text(350, 490, "↑↓ select  ←→ adjust", {
-      fontSize: "12px",
-      color: "#888888",
-    }).setOrigin(0.5);
+    createBitmapLabel(this, 720, 438, "UP/DOWN SELECT", {
+      font: UI_FONT,
+      size: 15,
+      tint: 0x9aa9b8,
+    }).setDepth(6);
+    createBitmapLabel(this, 720, 462, "LEFT/RIGHT ADJUST", {
+      font: UI_FONT,
+      size: 15,
+      tint: 0x9aa9b8,
+    }).setDepth(6);
     this.updateBodyBox();
   }
 
@@ -106,34 +192,42 @@ export class EditBodyScene extends Phaser.Scene {
     this.nextAdjustAt = 0;
     this.activeAdjustDirection = 0;
 
-    this.highlight = this.add.rectangle(180, 320 - 8, 150, 22, 0xffff00, 0.2);
-    this.highlight.setStrokeStyle(1, 0xffff00);
+    this.highlight = this.add.rectangle(725, 185, 302, 40, 0xffdf72, 0.16);
+    this.highlight.setStrokeStyle(1, 0xffdf72);
+    this.highlight.setDepth(5);
   }
 
   createButtons() {
-    const btnY = 530;
+    const btnY = 508;
 
-    this.add
-      .text(250, btnY, "← BACK", {
-        fontSize: "16px",
-        color: "#ffffff",
-        backgroundColor: "#333333",
-        padding: { x: 15, y: 8 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.back());
+    createButton(this, 360, btnY, 140, 42, "BACK", () => this.back(), {
+      ...buttonStyle("gray", {
+        icon: "icon-left-arrow",
+        iconSize: 18,
+        textX: 14,
+      }),
+      depth: 8,
+    });
 
-    this.add
-      .text(370, btnY, "RESET", {
-        fontSize: "16px",
-        color: "#ffffff",
-        backgroundColor: "#333333",
-        padding: { x: 15, y: 8 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.reset());
+    createButton(this, 530, btnY, 150, 42, "RESET", () => this.reset(), {
+      ...buttonStyle("red", {
+        icon: "icon-multiply",
+        iconSize: 18,
+        textX: 14,
+      }),
+      depth: 8,
+    });
+  }
+
+  createAdjustButton(x, y, label, onClick) {
+    return createButton(this, x, y, 34, 32, "", onClick, {
+      ...iconButtonStyle("yellow", label === "+" ? "icon-plus" : "icon-minus", {
+        iconSize: 17,
+      }),
+      repeat: true,
+      repeatDelay: 85,
+      depth: 8,
+    });
   }
 
   updateBodyBox() {
@@ -173,8 +267,8 @@ export class EditBodyScene extends Phaser.Scene {
   }
 
   updateHighlight() {
-    const y = 320 - 8 + this.paramIndex * 28;
-    this.highlight.setPosition(180, y);
+    const y = 185 + this.paramIndex * 48;
+    this.highlight.setPosition(725, y);
     this.currentParam = this.paramConfig[this.paramIndex];
   }
 
@@ -184,6 +278,12 @@ export class EditBodyScene extends Phaser.Scene {
     newValue = Math.max(param.min, Math.min(param.max, newValue));
     this.body[param.key] = newValue;
     this.updateBodyBox();
+  }
+
+  adjustParam(paramIndex, direction) {
+    this.paramIndex = paramIndex;
+    this.updateHighlight();
+    this.adjustValue(direction);
   }
 
   back() {
@@ -197,15 +297,22 @@ export class EditBodyScene extends Phaser.Scene {
 
   showMessage(text, color) {
     if (this.msg) this.msg.destroy();
-    this.msg = this.add
-      .text(480, 460, text, {
-        fontSize: "20px",
-        color: color === 0x00ff00 ? "#00ff00" : color === 0xffff00 ? "#ffff00" : "#ff0000",
-      })
-      .setOrigin(0.5);
+    const tint = color === 0x00ff00 ? 0x9dffb2 : color === 0xffff00 ? 0xffdf72 : 0xff7777;
+    this.msg = createBitmapLabel(this, 480, 460, text.toUpperCase(), {
+      font: UI_FONT,
+      size: 22,
+      tint,
+    }).setDepth(9);
     this.time.delayedCall(1500, () => {
       if (this.msg) this.msg.destroy();
     });
+  }
+
+  formatName(key) {
+    return key
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/-/g, " ")
+      .toUpperCase();
   }
 
   update() {

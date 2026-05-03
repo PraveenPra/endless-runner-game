@@ -7,8 +7,30 @@ import {
   createButton,
   createPanel,
   setBitmapLabelText,
-  SMALL_FONT_SIZE,
 } from "../ui/PixelUI.js";
+
+const UI_FONT = "allFont";
+const PANEL = {
+  atlas: "panel-blue",
+  prefix: "panel-blue",
+  slice: 32,
+};
+const BUTTON_BASE = {
+  atlas: "simple-buttons",
+  layout: "horizontal",
+  slice: 32,
+  font: UI_FONT,
+  fontSize: 23,
+  tint: 0x162032,
+};
+
+function buttonStyle(color, options = {}) {
+  return {
+    ...BUTTON_BASE,
+    prefix: `button-${color}-v`,
+    ...options,
+  };
+}
 
 export class Start extends Phaser.Scene {
   constructor() {
@@ -783,42 +805,51 @@ export class Start extends Phaser.Scene {
   /* ───────────────── UI ───────────────── */
 
   createUI() {
-    this.hudPanel = createPanel(this, 136, 55, 246, 92, {
+    this.hudPanel = createPanel(this, 176, 58, 330, 104, {
+      ...PANEL,
       depth: 50,
       alpha: 0.9,
     });
 
-    this.scoreText = createBitmapLabel(this, 30, 20, "score:0", {
-      size: SMALL_FONT_SIZE,
+    this.add.image(34, 23, "icons", "icon-trophy").setScale(0.9).setDepth(52);
+    this.scoreText = createBitmapLabel(this, 56, 24, "SCORE: 0", {
+      font: UI_FONT,
+      size: 18,
       tint: 0xf7ffe8,
       originX: 0,
     }).setDepth(52);
 
-    this.coinText = createBitmapLabel(this, 30, 48, `coins:${this.coins}`, {
-      size: SMALL_FONT_SIZE,
+    this.add.image(34, 51, "icons", "icon-circle").setScale(0.9).setDepth(52);
+    this.coinText = createBitmapLabel(this, 56, 52, `COINS: ${this.coins}`, {
+      font: UI_FONT,
+      size: 18,
       tint: 0xf7ffe8,
       originX: 0,
     }).setDepth(52);
 
-    this.gemText = createBitmapLabel(this, 30, 76, `gems:${this.gems}`, {
-      size: SMALL_FONT_SIZE,
+    this.add.image(34, 79, "icons", "icon-diamond").setScale(0.9).setDepth(52);
+    this.gemText = createBitmapLabel(this, 56, 80, `GEMS: ${this.gems}`, {
+      font: UI_FONT,
+      size: 18,
       tint: 0xf7ffe8,
       originX: 0,
     }).setDepth(52);
 
-    this.eggText = createBitmapLabel(this, 244, 20, "egg:none", {
-      size: SMALL_FONT_SIZE,
+    this.eggText = createBitmapLabel(this, 212, 24, "EGG: NONE", {
+      font: UI_FONT,
+      size: 18,
       tint: 0xf7ffe8,
       originX: 0,
     }).setDepth(52);
     this.eggSlot = this.add
-      .sprite(224, 60, "collectible-eggs")
+      .sprite(288, 68, "collectible-eggs")
       .setScale(0.32)
       .setDepth(52)
       .setVisible(false);
     this.updateHeldEggIndicator();
 
-    this.powerPanel = createPanel(this, this.sceneWidth - 118, 42, 210, 64, {
+    this.powerPanel = createPanel(this, this.sceneWidth - 138, 56, 250, 100, {
+      ...PANEL,
       depth: 50,
       alpha: 0.86,
     });
@@ -826,11 +857,12 @@ export class Start extends Phaser.Scene {
 
     this.shieldText = createBitmapLabel(
       this,
-      this.sceneWidth - 206,
+      this.sceneWidth - 238,
       24,
-      "shield:0",
+      "SHIELD: 0",
       {
-        size: SMALL_FONT_SIZE,
+        font: UI_FONT,
+        size: 17,
         tint: 0xf7ffe8,
         originX: 0,
       },
@@ -839,11 +871,12 @@ export class Start extends Phaser.Scene {
 
     this.magnetText = createBitmapLabel(
       this,
-      this.sceneWidth - 206,
-      44,
-      "magnet",
+      this.sceneWidth - 238,
+      46,
+      "MAGNET",
       {
-        size: SMALL_FONT_SIZE,
+        font: UI_FONT,
+        size: 17,
         tint: 0xf7ffe8,
         originX: 0,
       },
@@ -852,11 +885,12 @@ export class Start extends Phaser.Scene {
 
     this.speedBoostText = createBitmapLabel(
       this,
-      this.sceneWidth - 206,
-      64,
-      "speed",
+      this.sceneWidth - 238,
+      68,
+      "SPEED",
       {
-        size: SMALL_FONT_SIZE,
+        font: UI_FONT,
+        size: 17,
         tint: 0xf7ffe8,
         originX: 0,
       },
@@ -865,11 +899,12 @@ export class Start extends Phaser.Scene {
 
     this.evolutionText = createBitmapLabel(
       this,
-      this.sceneWidth - 206,
-      84,
-      "rampage",
+      this.sceneWidth - 238,
+      90,
+      "RAMPAGE",
       {
-        size: SMALL_FONT_SIZE,
+        font: UI_FONT,
+        size: 17,
         tint: 0xf7ffe8,
         originX: 0,
       },
@@ -898,9 +933,10 @@ export class Start extends Phaser.Scene {
       this,
       this.sceneWidth / 2,
       this.sceneHeight / 2,
-      470,
-      368,
+      560,
+      392,
       {
+        ...PANEL,
         depth: 91,
         alpha: 0.97,
       },
@@ -910,11 +946,11 @@ export class Start extends Phaser.Scene {
     this.gameOverText = createBitmapLabel(
       this,
       this.sceneWidth / 2,
-      132,
-      "GAMEOVER",
+      118,
+      "GAME OVER",
       {
-        font: "bigFont",
-        size: 48,
+        font: UI_FONT,
+        size: 44,
         tint: 0xf7ffe8,
       },
     )
@@ -922,18 +958,28 @@ export class Start extends Phaser.Scene {
       .setVisible(false);
 
     const rows = [
-      ["finalScoreText", "score:0", 190],
-      ["highScoreText", "best:0", 224],
-      ["coinsEarnedText", "coins:0", 258],
-      ["gemsEarnedText", "gems:0", 292],
-      ["eggsEarnedText", "eggs:0", 326],
-      ["distanceText", "distance:0", 360],
+      ["finalScoreText", "SCORE: 0", 174, "icon-trophy"],
+      ["highScoreText", "BEST: 0", 206, "icon-star"],
+      ["coinsEarnedText", "COINS: 0", 238, "icon-circle"],
+      ["gemsEarnedText", "GEMS: 0", 270, "icon-diamond"],
+      ["eggsEarnedText", "EGGS: 0", 302, "icon-key"],
+      ["distanceText", "DISTANCE: 0", 334, "icon-flag"],
     ];
+    this.gameOverStatIcons = [];
 
-    rows.forEach(([prop, text, y]) => {
-      this[prop] = createBitmapLabel(this, this.sceneWidth / 2, y, text, {
-        size: SMALL_FONT_SIZE,
+    rows.forEach(([prop, text, y, icon]) => {
+      const statIcon = this.add
+        .image(this.sceneWidth / 2 - 125, y, "icons", icon)
+        .setScale(1)
+        .setDepth(92)
+        .setVisible(false);
+      this.gameOverStatIcons.push(statIcon);
+
+      this[prop] = createBitmapLabel(this, this.sceneWidth / 2 - 100, y, text, {
+        font: UI_FONT,
+        size: 22,
         tint: 0xf7ffe8,
+        originX: 0,
       })
         .setDepth(92)
         .setVisible(false);
@@ -942,28 +988,38 @@ export class Start extends Phaser.Scene {
     this.restartText = createButton(
       this,
       this.sceneWidth / 2 - 120,
-      430,
+      422,
       190,
       44,
-      "restart",
+      "RESTART",
       () => {
         this.scene.restart();
       },
       {
+        ...buttonStyle("lime", {
+          icon: "icon-right-arrow",
+          iconSize: 18,
+          textX: 15,
+        }),
         depth: 92,
       },
     );
     this.menuText = createButton(
       this,
       this.sceneWidth / 2 + 120,
-      430,
+      422,
       190,
       44,
-      "menu",
+      "MENU",
       () => {
         this.scene.start("MainMenuScene");
       },
       {
+        ...buttonStyle("gray", {
+          icon: "icon-left-arrow",
+          iconSize: 18,
+          textX: 14,
+        }),
         depth: 92,
       },
     );
@@ -978,6 +1034,7 @@ export class Start extends Phaser.Scene {
       this.gemsEarnedText,
       this.eggsEarnedText,
       this.distanceText,
+      ...this.gameOverStatIcons,
       this.restartText,
       this.menuText,
     ];
@@ -1029,11 +1086,11 @@ export class Start extends Phaser.Scene {
     if (type.kind === "coin") {
       this.coins += type.value;
       GameState.currency.addCoins(type.value);
-      setBitmapLabelText(this.coinText, `coins:${this.coins}`);
+      setBitmapLabelText(this.coinText, `COINS: ${this.coins}`, UI_FONT);
     } else if (type.kind === "gem") {
       this.gems += type.value;
       GameState.currency.addGems(type.value);
-      setBitmapLabelText(this.gemText, `gems:${this.gems}`);
+      setBitmapLabelText(this.gemText, `GEMS: ${this.gems}`, UI_FONT);
     } else if (type.kind === "egg") {
       this.collectEgg(collectible);
     } else if (type.kind === "shield") {
@@ -1117,13 +1174,17 @@ export class Start extends Phaser.Scene {
   }
 
   showPickupMessage(text) {
-    const message = this.add
-      .text(this.player.x, this.player.y - 70 * this.scaleY, text, {
-        fontSize: "12px",
-        fill: "#ff7777",
-      })
-      .setOrigin(0.5)
-      .setDepth(40);
+    const message = createBitmapLabel(
+      this,
+      this.player.x,
+      this.player.y - 70 * this.scaleY,
+      text.toUpperCase(),
+      {
+        font: UI_FONT,
+        size: 18,
+        tint: 0xff7777,
+      },
+    ).setDepth(54);
 
     this.tweens.add({
       targets: message,
@@ -1138,7 +1199,7 @@ export class Start extends Phaser.Scene {
     if (!this.eggText || !this.eggSlot) return;
 
     const hasEgg = this.heldEggFrameIndex !== null;
-    setBitmapLabelText(this.eggText, hasEgg ? "egg" : "egg:none");
+    setBitmapLabelText(this.eggText, hasEgg ? "EGG: READY" : "EGG: NONE", UI_FONT);
     this.eggSlot.setVisible(hasEgg);
     if (hasEgg) {
       this.eggSlot.setFrame(this.heldEggFrameIndex);
@@ -1422,7 +1483,7 @@ export class Start extends Phaser.Scene {
     }
 
     if (this.shieldText) {
-      setBitmapLabelText(this.shieldText, `shield:${this.shieldHits}`);
+      setBitmapLabelText(this.shieldText, `SHIELD: ${this.shieldHits}`, UI_FONT);
       this.shieldText.setVisible(this.shieldHits > 0);
     }
 
@@ -1604,17 +1665,19 @@ export class Start extends Phaser.Scene {
     this.gameOverItems.forEach((item) => item.setVisible(true));
 
     // Display statistics
-    setBitmapLabelText(this.finalScoreText, `score:${GameState.session.score}`);
-    setBitmapLabelText(this.highScoreText, `best:${GameState.highScore}`);
+    setBitmapLabelText(this.finalScoreText, `SCORE: ${GameState.session.score}`, UI_FONT);
+    setBitmapLabelText(this.highScoreText, `BEST: ${GameState.highScore}`, UI_FONT);
     setBitmapLabelText(
       this.coinsEarnedText,
-      `coins:${GameState.session.coins}`,
+      `COINS: ${GameState.session.coins}`,
+      UI_FONT,
     );
-    setBitmapLabelText(this.gemsEarnedText, `gems:${GameState.session.gems}`);
-    setBitmapLabelText(this.eggsEarnedText, `eggs:${GameState.session.eggs}`);
+    setBitmapLabelText(this.gemsEarnedText, `GEMS: ${GameState.session.gems}`, UI_FONT);
+    setBitmapLabelText(this.eggsEarnedText, `EGGS: ${GameState.session.eggs}`, UI_FONT);
     setBitmapLabelText(
       this.distanceText,
-      `distance:${GameState.session.distance}`,
+      `DISTANCE: ${GameState.session.distance}`,
+      UI_FONT,
     );
   }
 
@@ -1653,7 +1716,7 @@ export class Start extends Phaser.Scene {
 
   updateScore() {
     this.score += this.scoreSpeed;
-    setBitmapLabelText(this.scoreText, `score:${Math.floor(this.score)}`);
+    setBitmapLabelText(this.scoreText, `SCORE: ${Math.floor(this.score)}`, UI_FONT);
   }
 
   updateJumpState() {

@@ -51,6 +51,14 @@ export function createButton(scene, x, y, width, height, label, onClick, options
     .setOrigin(0.5)
     .setInteractive({ useHandCursor: true });
   container.add(hitArea);
+  container.hitArea = hitArea;
+
+  let repeatEvent = null;
+  const stopRepeat = () => {
+    if (!repeatEvent) return;
+    repeatEvent.remove(false);
+    repeatEvent = null;
+  };
 
   hitArea.on("pointerover", () => {
     scene.tweens.add({
@@ -63,6 +71,7 @@ export function createButton(scene, x, y, width, height, label, onClick, options
   });
 
   hitArea.on("pointerout", () => {
+    stopRepeat();
     scene.tweens.add({
       targets: container,
       scaleX: 1,
@@ -74,11 +83,20 @@ export function createButton(scene, x, y, width, height, label, onClick, options
 
   hitArea.on("pointerdown", () => {
     container.setScale(0.98);
+    if (options.repeat && onClick) {
+      onClick();
+      repeatEvent = scene.time.addEvent({
+        delay: options.repeatDelay || 120,
+        loop: true,
+        callback: onClick,
+      });
+    }
   });
 
   hitArea.on("pointerup", () => {
+    stopRepeat();
     container.setScale(1.04);
-    if (onClick) onClick();
+    if (!options.repeat && onClick) onClick();
   });
 
   return container;
