@@ -1,5 +1,6 @@
 import { GameState } from "../GameState.js";
 import { createAnimations } from "../systems/AnimationFactory.js";
+import { DEV_MODE } from "../config/dev.js";
 import { getMapConfig } from "../config/maps.js";
 import {
   createBitmapLabel,
@@ -155,7 +156,7 @@ export class CharacterSelect extends Phaser.Scene {
       tint: 0xf7ffe8,
     }).setDepth(8);
 
-    createButton(this, 120, height - 34, 170, 42, "MAP", () =>
+    createButton(this, DEV_MODE ? 120 : 230, height - 34, 170, 42, "MAP", () =>
       this.scene.start("MapSelectScene"),
       {
         ...buttonStyle("yellow", {
@@ -166,27 +167,29 @@ export class CharacterSelect extends Phaser.Scene {
         depth: 8,
       },
     );
-    createButton(this, 315, height - 34, 190, 42, "BODY", () => this.editBody(), {
-      ...buttonStyle("gray", {
-        icon: "icon-fine-tune",
-        iconSize: 18,
-        textX: 14,
-      }),
-      depth: 8,
-    });
-    createButton(this, 540, height - 34, 230, 42, "PROJECTILE", () =>
-      this.editProjectiles(),
-      {
+    if (DEV_MODE) {
+      createButton(this, 315, height - 34, 190, 42, "BODY", () => this.editBody(), {
         ...buttonStyle("gray", {
-          icon: "icon-circle",
+          icon: "icon-fine-tune",
           iconSize: 18,
-          textX: 17,
-          fontSize: 20,
+          textX: 14,
         }),
         depth: 8,
-      },
-    );
-    createButton(this, 815, height - 34, 190, 42, "START", () =>
+      });
+      createButton(this, 540, height - 34, 230, 42, "PROJECTILE", () =>
+        this.editProjectiles(),
+        {
+          ...buttonStyle("gray", {
+            icon: "icon-circle",
+            iconSize: 18,
+            textX: 17,
+            fontSize: 20,
+          }),
+          depth: 8,
+        },
+      );
+    }
+    createButton(this, DEV_MODE ? 815 : 730, height - 34, 190, 42, "START", () =>
       this.startGame(),
       {
         ...buttonStyle("lime", {
@@ -220,6 +223,7 @@ export class CharacterSelect extends Phaser.Scene {
   }
 
   editBody() {
+    if (!DEV_MODE) return;
     if (!this.selectedKey) {
       this.showMessage("SELECT FIRST", 0xff7777);
       return;
@@ -228,6 +232,7 @@ export class CharacterSelect extends Phaser.Scene {
   }
 
   editProjectiles() {
+    if (!DEV_MODE) return;
     if (!this.selectedKey) {
       this.showMessage("SELECT FIRST", 0xff7777);
       return;

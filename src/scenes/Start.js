@@ -92,8 +92,9 @@ export class Start extends Phaser.Scene {
     this.speedBoostDuration = 8000;
     this.evolutionActive = false;
     this.evolutionIntroActive = false;
+    this.evolutionFreezeActive = false;
     this.evolutionDuration = 8000;
-    this.evolutionIntroDuration = 850;
+    this.evolutionIntroDuration = 1100;
     this.evolutionSpeedMultiplier = 2.2;
     this.evolutionIntroSpeedMultiplier = 0.08;
     this.activeDigimonKey = GameState.selectedDigimon || "agumon";
@@ -105,6 +106,7 @@ export class Start extends Phaser.Scene {
     this.pendingAttackEvent = null;
     this.evolutionTimer = null;
     this.evolutionIntroTimer = null;
+    this.frozenBodies = [];
     this.dustTrailTimer = null;
     this.mapConfig = getMapConfig(GameState.selectedMapKey);
   }
@@ -426,6 +428,22 @@ export class Start extends Phaser.Scene {
         texture: "vfx-watergun-stream",
         frameRate: 12,
       },
+      {
+        key: "vfx-shield-pickup",
+        texture: "vfx-shield-pickup",
+        frameRate: 14,
+      },
+      {
+        key: "vfx-shining-shield",
+        texture: "vfx-shining-shield",
+        frameRate: 14,
+      },
+      {
+        key: "vfx-shining-shield-once",
+        texture: "vfx-shining-shield",
+        frameRate: 14,
+        repeat: 0,
+      },
     ];
 
     animations.forEach(({ key, texture, frameRate, repeat = -1 }) => {
@@ -445,12 +463,15 @@ export class Start extends Phaser.Scene {
   playSfx(key, config = {}) {
     const soundKey = key.startsWith("sfx-") ? key : `sfx-${key}`;
     if (!GameState.audio.sfxEnabled || !this.cache.audio.exists(soundKey))
-      return;
+      return null;
 
-    this.sound.play(soundKey, {
+    const sound = this.sound.add(soundKey, {
       volume: GameState.audio.sfxVolume,
       ...config,
     });
+    sound.play();
+    sound.once("complete", () => sound.destroy());
+    return sound;
   }
 
   startBackgroundMusic() {
@@ -665,6 +686,10 @@ export class Start extends Phaser.Scene {
 
   spawnObstacle() {
     if (this.gameOver) return;
+    if (this.evolutionFreezeActive) {
+      this.time.delayedCall(160, this.spawnObstacle, [], this);
+      return;
+    }
 
     const type = Phaser.Utils.Array.GetRandom(this.obstacleTypes);
     if (!type) return;
@@ -704,6 +729,10 @@ export class Start extends Phaser.Scene {
 
   spawnCollectible() {
     if (this.gameOver) return;
+    if (this.evolutionFreezeActive) {
+      this.time.delayedCall(160, this.spawnCollectible, [], this);
+      return;
+    }
 
     const weightedTypes = this.collectibleTypes.flatMap((type) =>
       Array(type.weight).fill(type),
@@ -1207,6 +1236,19 @@ export class Start extends Phaser.Scene {
   }
 
   updateWorldSpeed() {
+    if (this.evolutionFreezeActive) {
+      this.obstacles?.children.iterate((o) => {
+        if (o && o.active) o.setVelocityX(0);
+      });
+      this.collectibles?.children.iterate((c) => {
+        if (c && c.active) c.setVelocityX(0);
+      });
+      this.projectiles?.children.iterate((p) => {
+        if (p && p.active) p.setVelocityX(0);
+      });
+      return;
+    }
+
     const speedBoostMultiplier = this.speedBoostActive ? 1.8 : 1;
     const evolutionMultiplier = this.evolutionActive
       ? this.evolutionSpeedMultiplier
@@ -1253,19 +1295,24 @@ export class Start extends Phaser.Scene {
 
     this.evolutionActive = true;
     this.evolutionIntroActive = true;
-    this.switchPlayerForm(targetDigimonKey, 1.35);
+    this.pendingEvolutionDigimonKey = targetDigimonKey;
     this.anchorPlayerRunPosition();
+    this.beginEvolutionFreeze();
     this.updateWorldSpeed();
-    this.playEvolutionVFX();
+    this.playEvolutionVFX(() => this.finishEvolutionIntro());
 
-    this.evolutionIntroTimer = this.time.addEvent({
-      delay: this.evolutionIntroDuration,
-      callback: () => {
-        this.evolutionIntroActive = false;
-        this.updateWorldSpeed();
-      },
-      callbackScope: this,
-    });
+    this.updatePowerUpIndicator();
+  }
+
+  finishEvolutionIntro() {
+    if (!this.evolutionActive || this.gameOver) return;
+
+    this.switchPlayerForm(this.pendingEvolutionDigimonKey || this.baseDigimonKey, 1.35);
+    this.pendingEvolutionDigimonKey = null;
+    this.anchorPlayerRunPosition();
+    this.endEvolutionFreeze();
+    this.evolutionIntroActive = false;
+    this.updateWorldSpeed();
 
     this.dustTrailTimer = this.time.addEvent({
       delay: 90,
@@ -1279,13 +1326,12 @@ export class Start extends Phaser.Scene {
       callback: this.deactivateEvolution,
       callbackScope: this,
     });
-
-    this.updatePowerUpIndicator();
   }
 
   deactivateEvolution() {
     this.evolutionActive = false;
     this.evolutionIntroActive = false;
+    this.endEvolutionFreeze();
     this.switchPlayerForm(this.baseDigimonKey, 1);
     this.anchorPlayerRunPosition();
     this.updateWorldSpeed();
@@ -1298,9 +1344,7 @@ export class Start extends Phaser.Scene {
       this.dustTrailTimer.remove(false);
       this.dustTrailTimer = null;
     }
-    if (this.evolutionSprite) {
-      this.evolutionSprite.setVisible(false);
-    }
+    this.pendingEvolutionDigimonKey = null;
     if (this.evolutionText) {
       this.evolutionText.setVisible(false);
     }
@@ -1335,8 +1379,70 @@ export class Start extends Phaser.Scene {
     this.player.x = this.playerStartX;
   }
 
-  playEvolutionVFX() {
-    this.playSfx("evolution", { volume: 0.4 });
+  beginEvolutionFreeze() {
+    if (this.evolutionFreezeActive) return;
+
+    this.evolutionFreezeActive = true;
+    this.frozenBodies = [];
+    this.frozenPlayer = null;
+
+    if (this.player?.body) {
+      this.frozenPlayer = {
+        velocityX: this.player.body.velocity.x,
+        velocityY: this.player.body.velocity.y,
+        allowGravity: this.player.body.allowGravity,
+      };
+      this.player.setVelocity(0, 0);
+      this.player.body.setAllowGravity(false);
+    }
+
+    [this.obstacles, this.collectibles, this.projectiles].forEach((group) => {
+      group?.children.iterate((item) => {
+        if (!item?.body) return;
+
+        this.frozenBodies.push({
+          item,
+          velocityX: item.body.velocity.x,
+          velocityY: item.body.velocity.y,
+        });
+        item.setVelocity(0, 0);
+      });
+    });
+  }
+
+  endEvolutionFreeze() {
+    if (!this.evolutionFreezeActive) return;
+
+    this.evolutionFreezeActive = false;
+    if (this.player?.body && this.frozenPlayer) {
+      this.player.body.setAllowGravity(this.frozenPlayer.allowGravity);
+      this.player.setVelocity(this.frozenPlayer.velocityX, this.frozenPlayer.velocityY);
+    }
+    this.frozenPlayer = null;
+
+    this.frozenBodies.forEach(({ item, velocityX, velocityY }) => {
+      if (!item?.active || !item.body) return;
+      item.setVelocity(velocityX, velocityY);
+    });
+    this.frozenBodies = [];
+    this.updateWorldSpeed();
+  }
+
+  playEvolutionVFX(onComplete) {
+    let pending = 1;
+    let completed = false;
+    const done = () => {
+      pending -= 1;
+      if (pending > 0 || completed) return;
+      completed = true;
+      onComplete?.();
+    };
+
+    const evolutionSfx = this.playSfx("evolution", { volume: 0.4 });
+    if (evolutionSfx) {
+      pending += 1;
+      evolutionSfx.once("complete", done);
+    }
 
     this.cameras.main.shake(260, 0.012);
     this.cameras.main.flash(160, 255, 245, 130);
@@ -1354,6 +1460,32 @@ export class Start extends Phaser.Scene {
     } else {
       this.time.delayedCall(180, () => burst.destroy());
     }
+
+    if (this.textures.exists("vfx-shining-shield")) {
+      pending += 1;
+      const shine = this.add.sprite(
+        this.player.x,
+        this.player.y - this.player.displayHeight * 0.5,
+        "vfx-shining-shield",
+      );
+      shine.setDepth(26);
+      shine.setScale(2.35);
+
+      if (this.anims.exists("vfx-shining-shield-once")) {
+        shine.play("vfx-shining-shield-once");
+        shine.once("animationcomplete", () => {
+          shine.destroy();
+          done();
+        });
+      } else {
+        this.time.delayedCall(this.evolutionIntroDuration, () => {
+          shine.destroy();
+          done();
+        });
+      }
+    }
+
+    this.time.delayedCall(this.evolutionIntroDuration, done);
   }
 
   spawnDustTrail() {
@@ -1418,19 +1550,6 @@ export class Start extends Phaser.Scene {
       this.speedBoostText.setVisible(this.speedBoostActive);
     }
 
-    if (this.evolutionActive && !this.evolutionSprite) {
-      this.evolutionSprite = this.add.sprite(
-        this.player.x,
-        this.player.y - 58 * this.scaleY,
-        "evolution-powerup",
-      );
-      this.evolutionSprite.setScale(0.65);
-    }
-    if (this.evolutionSprite) {
-      this.evolutionSprite.setVisible(this.evolutionActive);
-      this.evolutionSprite.x = this.player.x;
-      this.evolutionSprite.y = this.player.y - 55 * this.scaleY;
-    }
     if (this.evolutionText) {
       this.evolutionText.setVisible(this.evolutionActive);
     }
@@ -1451,35 +1570,34 @@ export class Start extends Phaser.Scene {
 
   updateShieldIndicator() {
     if (this.shieldHits > 0 && !this.shieldSprite) {
+      const position = this.getShieldVFXPosition();
       this.shieldSprite = this.add.sprite(
-        this.player.x,
-        this.player.y - 30 * this.scaleY,
-        "shield-powerup",
+        position.x,
+        position.y,
+        "vfx-shield-pickup",
       );
-      this.shieldSprite.setScale(0.8);
+      this.shieldSprite.setDepth(22);
+      this.shieldSprite.setScale(0.82);
 
-      this.tweens.add({
-        targets: this.shieldSprite,
-        angle: 360,
-        duration: 1500,
-        repeat: -1,
-        ease: "Linear",
-      });
-
-      this.tweens.add({
-        targets: this.shieldSprite,
-        y: this.player.y - 35 * this.scaleY,
-        duration: 300,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut",
-      });
+      if (this.anims.exists("vfx-shield-pickup")) {
+        this.shieldSprite.play("vfx-shield-pickup");
+      }
     }
 
     if (this.shieldSprite) {
+      const position = this.getShieldVFXPosition();
       this.shieldSprite.setVisible(this.shieldHits > 0);
-      this.shieldSprite.x = this.player.x;
-      this.shieldSprite.y = this.player.y - 25 * this.scaleY;
+      this.shieldSprite.setPosition(position.x, position.y);
+      if (this.shieldSprite.texture.key !== "vfx-shield-pickup") {
+        this.shieldSprite.setTexture("vfx-shield-pickup");
+      }
+      if (
+        this.shieldHits > 0 &&
+        this.anims.exists("vfx-shield-pickup") &&
+        this.shieldSprite.anims.currentAnim?.key !== "vfx-shield-pickup"
+      ) {
+        this.shieldSprite.play("vfx-shield-pickup");
+      }
     }
 
     if (this.shieldText) {
@@ -1488,6 +1606,14 @@ export class Start extends Phaser.Scene {
     }
 
     this.updatePowerPanelVisibility();
+  }
+
+  getShieldVFXPosition() {
+    const bodyRect = this.getPlayerBodyRect();
+    return {
+      x: bodyRect.x + bodyRect.width + 8 * this.scaleX,
+      y: bodyRect.y + bodyRect.height * 0.52,
+    };
   }
 
   updateMagnetAttraction() {
@@ -1694,6 +1820,12 @@ export class Start extends Phaser.Scene {
 
   update() {
     if (!this.gameOver) {
+      if (this.evolutionFreezeActive) {
+        this.updateShieldIndicator();
+        this.updatePowerUpIndicator();
+        return;
+      }
+
       this.updateJumpState();
       this.updateScore();
       this.handleJump();

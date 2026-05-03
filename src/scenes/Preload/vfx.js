@@ -36,6 +36,18 @@ export const vfxSpritesheets = [
     w: 39,
     h: 31,
   },
+  {
+    key: "vfx-shield-pickup",
+    file: "vfx-shield-pickup.png",
+    w: 64,
+    h: 64,
+  },
+  {
+    key: "vfx-shining-shield",
+    file: "shining-shield.png",
+    w: 64,
+    h: 64,
+  },
 ];
 
 export function loadVFX(scene) {
