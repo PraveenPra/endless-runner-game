@@ -6,8 +6,30 @@ import {
   createButton,
   createPanel,
   setBitmapLabelText,
-  SMALL_FONT_SIZE,
 } from "../ui/PixelUI.js";
+
+const UI_FONT = "allFont";
+const PANEL = {
+  atlas: "panel-blue",
+  prefix: "panel-blue",
+  slice: 32,
+};
+const BUTTON_BASE = {
+  atlas: "simple-buttons",
+  layout: "horizontal",
+  slice: 32,
+  font: UI_FONT,
+  fontSize: 22,
+  tint: 0x162032,
+};
+
+function buttonStyle(color, options = {}) {
+  return {
+    ...BUTTON_BASE,
+    prefix: `button-${color}-v`,
+    ...options,
+  };
+}
 
 export class CharacterSelect extends Phaser.Scene {
   constructor() {
@@ -29,15 +51,18 @@ export class CharacterSelect extends Phaser.Scene {
   createHeader(width) {
     const map = getMapConfig(GameState.selectedMapKey);
 
-    createPanel(this, width / 2, 62, 640, 92, { depth: 4, alpha: 0.96 });
+    createPanel(this, width / 2, 62, 640, 92, { ...PANEL, depth: 4, alpha: 0.96 });
+    this.add.image(width / 2 - 138, 58, "icons", "icon-login").setScale(1.45).setDepth(7);
     createBitmapLabel(this, width / 2, 58, "DIGIMON", {
-      font: "bigFont",
-      size: 50,
+      font: UI_FONT,
+      size: 42,
       tint: 0xf7ffe8,
     }).setDepth(6);
+    this.add.image(width / 2 + 138, 58, "icons", "icon-star").setScale(1.45).setDepth(7);
 
-    createBitmapLabel(this, width / 2, 118, `map:${map.name}`, {
-      size: SMALL_FONT_SIZE,
+    createBitmapLabel(this, width / 2, 118, `MAP: ${map.name.toUpperCase()}`, {
+      font: UI_FONT,
+      size: 22,
       tint: 0xf7ffe8,
     }).setDepth(6);
   }
@@ -65,13 +90,14 @@ export class CharacterSelect extends Phaser.Scene {
 
     const unlocked = GameState.unlockedBaseForms.has(key);
     const panel = createPanel(this, x, y, width, height, {
+      ...PANEL,
       depth: 4,
       alpha: unlocked ? 0.96 : 0.58,
     });
 
     const outline = this.add
       .rectangle(x, y, width + 8, height + 8)
-      .setStrokeStyle(3, 0xf7ffe8)
+      .setStrokeStyle(3, 0xffdf72)
       .setDepth(5)
       .setVisible(false);
 
@@ -93,9 +119,16 @@ export class CharacterSelect extends Phaser.Scene {
       sprite.play(animKey, true);
     }
 
-    const label = createBitmapLabel(this, x, y + 42, unlocked ? key : "locked", {
-      size: SMALL_FONT_SIZE,
-      tint: unlocked ? 0xf7ffe8 : 0x386341,
+    const statusIcon = this.add
+      .image(x - 42, y + 42, "icons", unlocked ? "icon-tick" : "icon-lock")
+      .setScale(0.9)
+      .setDepth(7)
+      .setAlpha(unlocked ? 1 : 0.55);
+
+    const label = createBitmapLabel(this, x + 8, y + 42, unlocked ? this.formatName(key) : "LOCKED", {
+      font: UI_FONT,
+      size: 16,
+      tint: unlocked ? 0xf7ffe8 : 0x9aa9b8,
     }).setDepth(6);
 
     const hitArea = this.add
@@ -110,31 +143,65 @@ export class CharacterSelect extends Phaser.Scene {
       panel,
       outline,
       sprite,
+      statusIcon,
       label,
     });
   }
 
   createNavigation(width, height) {
-    this.messageText = createBitmapLabel(this, width / 2, height - 84, "select-digimon", {
-      size: SMALL_FONT_SIZE,
+    this.messageText = createBitmapLabel(this, width / 2, height - 84, "SELECT DIGIMON", {
+      font: UI_FONT,
+      size: 22,
       tint: 0xf7ffe8,
     }).setDepth(8);
 
-    createButton(this, 120, height - 34, 170, 42, "map", () =>
+    createButton(this, 120, height - 34, 170, 42, "MAP", () =>
       this.scene.start("MapSelectScene"),
+      {
+        ...buttonStyle("yellow", {
+          icon: "icon-layers",
+          iconSize: 18,
+          textX: 14,
+        }),
+        depth: 8,
+      },
     );
-    createButton(this, 315, height - 34, 190, 42, "body", () => this.editBody());
-    createButton(this, 540, height - 34, 230, 42, "projectile", () =>
+    createButton(this, 315, height - 34, 190, 42, "BODY", () => this.editBody(), {
+      ...buttonStyle("gray", {
+        icon: "icon-fine-tune",
+        iconSize: 18,
+        textX: 14,
+      }),
+      depth: 8,
+    });
+    createButton(this, 540, height - 34, 230, 42, "PROJECTILE", () =>
       this.editProjectiles(),
+      {
+        ...buttonStyle("gray", {
+          icon: "icon-circle",
+          iconSize: 18,
+          textX: 17,
+          fontSize: 20,
+        }),
+        depth: 8,
+      },
     );
-    createButton(this, 815, height - 34, 190, 42, "start", () =>
+    createButton(this, 815, height - 34, 190, 42, "START", () =>
       this.startGame(),
+      {
+        ...buttonStyle("lime", {
+          icon: "icon-right-arrow",
+          iconSize: 18,
+          textX: 15,
+        }),
+        depth: 8,
+      },
     );
   }
 
   select(key) {
     if (!GameState.unlockedBaseForms.has(key)) {
-      this.showMessage("hatch-first", 0xff7777);
+      this.showMessage("HATCH FIRST", 0xff7777);
       return;
     }
 
@@ -146,14 +213,15 @@ export class CharacterSelect extends Phaser.Scene {
       card.outline.setVisible(selected);
       card.sprite.setAlpha(selected ? 1 : card.unlocked ? 0.62 : 0.22);
       card.panel.setAlpha(selected ? 1 : card.unlocked ? 0.86 : 0.52);
+      card.statusIcon.setAlpha(selected ? 1 : card.unlocked ? 0.72 : 0.45);
     });
 
-    this.showMessage(key, 0xf7ffe8);
+    this.showMessage(this.formatName(key), 0xf7ffe8);
   }
 
   editBody() {
     if (!this.selectedKey) {
-      this.showMessage("select-first", 0xff7777);
+      this.showMessage("SELECT FIRST", 0xff7777);
       return;
     }
     this.scene.start("EditBodyScene", { digimon: this.selectedKey });
@@ -161,7 +229,7 @@ export class CharacterSelect extends Phaser.Scene {
 
   editProjectiles() {
     if (!this.selectedKey) {
-      this.showMessage("select-first", 0xff7777);
+      this.showMessage("SELECT FIRST", 0xff7777);
       return;
     }
     this.scene.start("EditProjectileScene", { digimon: this.selectedKey });
@@ -169,7 +237,7 @@ export class CharacterSelect extends Phaser.Scene {
 
   startGame() {
     if (!this.selectedKey) {
-      this.showMessage("select-first", 0xff7777);
+      this.showMessage("SELECT FIRST", 0xff7777);
       return;
     }
     this.scene.start("Start");
@@ -177,6 +245,13 @@ export class CharacterSelect extends Phaser.Scene {
 
   showMessage(text, tint = 0xf7ffe8) {
     this.messageText.setTint(tint);
-    setBitmapLabelText(this.messageText, text);
+    setBitmapLabelText(this.messageText, text, UI_FONT);
+  }
+
+  formatName(key) {
+    return key
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/-/g, " ")
+      .toUpperCase();
   }
 }
