@@ -1307,9 +1307,7 @@ export class Start extends Phaser.Scene {
   finishEvolutionIntro() {
     if (!this.evolutionActive || this.gameOver) return;
 
-    this.switchPlayerForm(this.pendingEvolutionDigimonKey || this.baseDigimonKey, 1.35);
-    this.pendingEvolutionDigimonKey = null;
-    this.anchorPlayerRunPosition();
+    this.revealEvolutionForm();
     this.endEvolutionFreeze();
     this.evolutionIntroActive = false;
     this.updateWorldSpeed();
@@ -1326,6 +1324,14 @@ export class Start extends Phaser.Scene {
       callback: this.deactivateEvolution,
       callbackScope: this,
     });
+  }
+
+  revealEvolutionForm() {
+    if (!this.pendingEvolutionDigimonKey) return;
+
+    this.switchPlayerForm(this.pendingEvolutionDigimonKey, 1.35);
+    this.pendingEvolutionDigimonKey = null;
+    this.anchorPlayerRunPosition();
   }
 
   deactivateEvolution() {
@@ -1463,9 +1469,10 @@ export class Start extends Phaser.Scene {
 
     if (this.textures.exists("vfx-shining-shield")) {
       pending += 1;
+      const bodyCenter = this.getPlayerBodyCenter();
       const shine = this.add.sprite(
-        this.player.x,
-        this.player.y - this.player.displayHeight * 0.5,
+        bodyCenter.x,
+        bodyCenter.y,
         "vfx-shining-shield",
       );
       shine.setDepth(26);
@@ -1474,11 +1481,13 @@ export class Start extends Phaser.Scene {
       if (this.anims.exists("vfx-shining-shield-once")) {
         shine.play("vfx-shining-shield-once");
         shine.once("animationcomplete", () => {
+          this.revealEvolutionForm();
           shine.destroy();
           done();
         });
       } else {
         this.time.delayedCall(this.evolutionIntroDuration, () => {
+          this.revealEvolutionForm();
           shine.destroy();
           done();
         });
@@ -1613,6 +1622,14 @@ export class Start extends Phaser.Scene {
     return {
       x: bodyRect.x + bodyRect.width + 8 * this.scaleX,
       y: bodyRect.y + bodyRect.height * 0.52,
+    };
+  }
+
+  getPlayerBodyCenter() {
+    const bodyRect = this.getPlayerBodyRect();
+    return {
+      x: bodyRect.x + bodyRect.width * 0.5,
+      y: bodyRect.y + bodyRect.height * 0.5,
     };
   }
 
