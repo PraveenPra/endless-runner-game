@@ -1,15 +1,15 @@
-export const agumon = {
+export const greymon = {
   body: {
-    width: 11,
-    height: 14,
-    offsetX: 0,
+    width: 17,
+    height: 23,
+    offsetX: -2,
     offsetY: 0,
     gravityY: 900,
   },
   attacks: {
     main: {
       type: "projectile",
-      anim: "attack-C",
+      anim: "attack-B",
       power: 0.5,
       damage: 1,
       impactVFX: "vfx-tiny-fire-impact",
@@ -28,7 +28,7 @@ export const agumon = {
     },
     skill1: {
       type: "projectile",
-      anim: "attack-E",
+      anim: "attack-A",
       power: 4,
       impactVFX: "vfx-gnd-blast",
       projectile: {
@@ -50,7 +50,7 @@ export const agumon = {
     speed: 200,
   },
   evolution: {
-    prev: null,
-    next: "greymon",
+    prev: "agumon",
+    next: "imperialdramon",
   },
 };

@@ -76,6 +76,8 @@ export const GameState = {
   },
 
   hatchableDigimon: [
+    "greymon",
+    "garuromon",
     "botomon",
     "wormmon",
     "kunemon",
@@ -90,6 +92,8 @@ export const GameState = {
 
   allPlayableDigimon: [
     "botomon",
+    "greymon",
+    "garuromon",
     "wormmon",
     "kunemon",
     "agumon",
@@ -182,10 +186,7 @@ export const GameState = {
     },
 
     canAfford(cost = {}) {
-      return (
-        this.coins >= (cost.coins || 0) &&
-        this.gems >= (cost.gems || 0)
-      );
+      return this.coins >= (cost.coins || 0) && this.gems >= (cost.gems || 0);
     },
 
     spend(cost = {}) {

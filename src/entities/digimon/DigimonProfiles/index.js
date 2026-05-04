@@ -1,6 +1,8 @@
 export { botomon } from "./botomon.js";
 export { agumon } from "./agumon.js";
+export { greymon } from "./greymon.js";
 export { gabumon } from "./gabumon.js";
+export { garuromon } from "./garuromon.js";
 export { patamon } from "./patamon.js";
 export { chivmon } from "./chivmon.js";
 export { kunemon } from "./kunemon.js";
