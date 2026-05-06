@@ -60,6 +60,12 @@ export const vfxSpritesheets = [
     w: 64,
     h: 64,
   },
+  {
+    key: "vfx-bomb-explosion",
+    file: "bomb-explosion.png",
+    w: 32,
+    h: 32,
+  },
 ];
 
 export function loadVFX(scene) {

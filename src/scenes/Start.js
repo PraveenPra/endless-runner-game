@@ -453,6 +453,12 @@ export class Start extends Phaser.Scene {
         repeat: 0,
       },
       {
+        key: "vfx-bomb-explosion",
+        texture: "vfx-bomb-explosion",
+        frameRate: 12,
+        repeat: 0,
+      },
+      {
         key: "vfx-tiny-fire-impact",
         texture: "vfx-tiny-fire-impact",
         frameRate: 14,

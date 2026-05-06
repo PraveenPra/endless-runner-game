@@ -12,7 +12,7 @@ export const agumon = {
       anim: "attack-C",
       power: 0.5,
       damage: 1,
-      impactVFX: "vfx-tiny-fire-impact",
+      impactVFX: "vfx-bomb-explosion",
       projectile: {
         texture: "fireball",
         anim: "fireball_fly",
