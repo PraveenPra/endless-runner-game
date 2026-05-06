@@ -61,6 +61,51 @@ export class Start extends Phaser.Scene {
     );
     this.startObstacleSpawner();
     this.startCollectibleSpawner();
+    this.startDustTrailTimer();
+  }
+
+  startDustTrailTimer() {
+    this.nextDustSpawnAt = 0;
+    this.activeDustSprite = null;
+    this.firstGrounded = false;
+    this.groundedDelayDone = false;
+  }
+
+  updateDustParticles() {
+    if (!this.player?.active || this.gameOver) return;
+
+    const isOnGround =
+      this.player.body.blocked.down || this.player.body.touching.down;
+
+    if (!isOnGround) {
+      this.nextDustSpawnAt = 0;
+      this.firstGrounded = false;
+      this.groundedDelayDone = false;
+      if (this.activeDustSprite) {
+        this.activeDustSprite.destroy();
+        this.activeDustSprite = null;
+      }
+      return;
+    }
+
+    if (!this.firstGrounded) {
+      this.firstGrounded = true;
+      this.time.delayedCall(150, () => {
+        this.groundedDelayDone = true;
+      });
+      return;
+    }
+
+    if (!this.groundedDelayDone) return;
+
+    if (this.time.now < this.nextDustSpawnAt) return;
+
+    if (this.activeDustSprite && this.activeDustSprite.active) {
+      this.activeDustSprite.destroy();
+    }
+
+    this.spawnDustParticles();
+    this.nextDustSpawnAt = this.time.now + 300;
   }
 
   /* ───────────────── STATE ───────────────── */
@@ -444,6 +489,17 @@ export class Start extends Phaser.Scene {
         texture: "vfx-shining-shield",
         frameRate: 14,
         repeat: 0,
+      },
+      {
+        key: "vfx-double-jump",
+        texture: "vfx-double-jump",
+        frameRate: 12,
+        repeat: 0,
+      },
+      {
+        key: "vfx-dust-particles",
+        texture: "vfx-dust-particles",
+        frameRate: 12,
       },
     ];
 
@@ -1874,6 +1930,7 @@ export class Start extends Phaser.Scene {
       this.updateShieldIndicator();
       this.updatePowerUpIndicator();
       this.updateSpeedBoostTrail();
+      this.updateDustParticles();
       if (this.magnetActive) {
         this.updateMagnetAttraction();
       }
@@ -1895,7 +1952,7 @@ export class Start extends Phaser.Scene {
     }
   }
 
-  handleJump() {
+handleJump() {
     if (
       Phaser.Input.Keyboard.JustDown(this.cursors.space) &&
       this.jumpCount < this.maxJumps
@@ -1907,6 +1964,72 @@ export class Start extends Phaser.Scene {
         this.player.play(jumpKey, true);
       }
       this.playSfx("jump");
+
+      if (this.jumpCount === 2) {
+        this.spawnDoubleJumpVFX();
+      }
+    }
+  }
+
+  spawnDoubleJumpVFX() {
+    if (!this.player || !this.player.active) return;
+
+    const playerFeetY = this.player.y;
+    const vfx = this.add.sprite(
+      this.player.x,
+      playerFeetY,
+      "vfx-double-jump",
+    );
+    vfx.setDepth(15);
+    vfx.setOrigin(0.5, 0);
+    vfx.setScale(0.5);
+    vfx.setAlpha(0.7);
+
+    if (this.anims.exists("vfx-double-jump")) {
+      vfx.play("vfx-double-jump");
+      vfx.once("animationcomplete", () => vfx.destroy());
+    } else {
+      this.time.delayedCall(100, () => vfx.destroy());
+    }
+  }
+
+spawnDustParticles() {
+    if (!this.player || !this.player.active) return;
+    if (!this.player.body.blocked.down && !this.player.body.touching.down) return;
+
+    const bodyRect = this.getPlayerBodyRect();
+    const offsetX = -4 * this.scaleX;
+
+    this.activeDustSprite = this.add.sprite(
+      bodyRect.x + offsetX,
+      bodyRect.y + bodyRect.height,
+      "vfx-dust-particles",
+    );
+    this.activeDustSprite.setDepth(8);
+    this.activeDustSprite.setOrigin(1, 1);
+    this.activeDustSprite.setScale(this.evolutionActive ? 0.45 : 0.25);
+    this.activeDustSprite.setAlpha(this.evolutionActive ? 0.9 : 0.6);
+
+    if (this.anims.exists("vfx-dust-particles")) {
+      this.activeDustSprite.play("vfx-dust-particles");
+      this.activeDustSprite.once("animationcomplete", () => {
+        if (this.activeDustSprite) {
+          this.activeDustSprite.destroy();
+          this.activeDustSprite = null;
+        }
+      });
+    } else {
+      this.tweens.add({
+        targets: this.activeDustSprite,
+        alpha: 0,
+        duration: 80,
+        onComplete: () => {
+          if (this.activeDustSprite) {
+            this.activeDustSprite.destroy();
+            this.activeDustSprite = null;
+          }
+        },
+      });
     }
   }
 

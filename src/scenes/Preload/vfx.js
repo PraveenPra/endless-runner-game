@@ -48,6 +48,18 @@ export const vfxSpritesheets = [
     w: 64,
     h: 64,
   },
+  {
+    key: "vfx-double-jump",
+    file: "vfx-double-jump.png",
+    w: 64,
+    h: 64,
+  },
+  {
+    key: "vfx-dust-particles",
+    file: "vfx-dust-particles.png",
+    w: 64,
+    h: 64,
+  },
 ];
 
 export function loadVFX(scene) {
